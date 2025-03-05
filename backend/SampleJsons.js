@@ -24,6 +24,9 @@ const userExample = {
   ],
 };
 
+/**
+ * TODO: comments for each field
+ */
 const cardExample = {
   _id: "ObjectID",
   creator: "String",
