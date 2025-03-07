@@ -1,0 +1,24 @@
+{
+    "root": [
+        {
+            "player_id": "60f7a2b9...",
+            "username": "user1",
+            "cards": [
+                {
+                    "_id": "6123...",
+                    "creator": "user1",
+                    "owner": "user1",
+                    "common_name": "some common name",
+                    "scientific_name": "some scientific name",
+                    "fun_fact": "iosdjosid",
+                    "time_created": "2025-03-05T12:34:56Z",
+                    "location": "Blacksburg",
+                    "rarity": "Rare",
+                    "trade_status": "Trading",
+                    "info_link": "some link",
+                    "image": "some image link"
+                }
+            ]
+        }
+    ]
+}
