@@ -86,7 +86,7 @@ export default function SignIn() {
                 onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
                 className="w-full bg-green-700 text-white hover:bg-green-600"
               >
-                Sign Up with Google
+                Sign up with Google
               </Button>
 
               <div className="flex items-center justify-center space-x-4">
@@ -108,7 +108,7 @@ export default function SignIn() {
                   type="submit"
                   className="w-full bg-green-700 text-white hover:bg-green-600"
                 >
-                  Sign Up with Email
+                  Sign up with Email
                 </Button>
               </form>
             </CardContent>
