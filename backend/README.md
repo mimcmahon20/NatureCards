@@ -1,3 +1,5 @@
+# Note on Endpoints
+
 FOR SIGN UP:
 SIGNUP POST endpoint creates a new document on the database (esentially creates new user). And returns the ok status.
 
