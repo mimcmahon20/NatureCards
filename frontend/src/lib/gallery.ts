@@ -11,6 +11,10 @@ export interface Card {
   tradeStatus: boolean;
   infoLink: string;
   image: string;
+  // Additional fields for detailed view
+  id: string;
+  family: string;
+  username: string;
 }
 
 export interface GalleryResponse {
@@ -25,6 +29,7 @@ const mockGalleryData: GalleryResponse = {
   "username": "nature_lover",
   "cards": [
     {
+      "id": "card-1",
       "creator": 1,
       "owner": 1,
       "commonName": "Rose",
@@ -36,8 +41,11 @@ const mockGalleryData: GalleryResponse = {
       "tradeStatus": false,
       "infoLink": "https://nature-cards-eight.vercel.app/roses",
       "image": "https://hips.hearstapps.com/hmg-prod/images/close-up-of-blossoming-rose-flower-royalty-free-image-1580853844.jpg?crop=0.668xw:1.00xh;0.248xw,0&resize=980:*",
+      "family": "Rosaceae",
+      "username": "rose_collector"
     },
     {
+      "id": "card-2",
       "creator": 2,
       "owner": 1,
       "commonName": "Sunflower",
@@ -49,8 +57,11 @@ const mockGalleryData: GalleryResponse = {
       "tradeStatus": false,
       "infoLink": "https://nature-cards-eight.vercel.app/sunflowers",
       "image": "https://hips.hearstapps.com/hmg-prod/images/close-up-of-blossoming-rose-flower-royalty-free-image-1580853844.jpg?crop=0.668xw:1.00xh;0.248xw,0&resize=980:*",
+      "family": "Asteraceae",
+      "username": "sunflower_fan"
     },
     {
+      "id": "card-3",
       "creator": 3,
       "owner": 1,
       "commonName": "Orchid",
@@ -62,8 +73,11 @@ const mockGalleryData: GalleryResponse = {
       "tradeStatus": false,
       "infoLink": "https://nature-cards-eight.vercel.app/orchids",
       "image": "https://hips.hearstapps.com/hmg-prod/images/close-up-of-blossoming-rose-flower-royalty-free-image-1580853844.jpg?crop=0.668xw:1.00xh;0.248xw,0&resize=980:*",
+      "family": "Orchidaceae",
+      "username": "orchid_enthusiast"
     },
     {
+      "id": "card-4",
       "creator": 4,
       "owner": 1,
       "commonName": "Venus Flytrap",
@@ -75,6 +89,8 @@ const mockGalleryData: GalleryResponse = {
       "tradeStatus": false,
       "infoLink": "https://nature-cards-eight.vercel.app/venus-flytrap",
       "image": "https://hips.hearstapps.com/hmg-prod/images/close-up-of-blossoming-rose-flower-royalty-free-image-1580853844.jpg?crop=0.668xw:1.00xh;0.248xw,0&resize=980:*",
+      "family": "Droseraceae",
+      "username": "carnivorous_plant_lover"
     }
   ]
 };
@@ -86,6 +102,17 @@ export async function fetchGalleryData(): Promise<GalleryResponse> {
     setTimeout(() => {
       resolve(mockGalleryData);
     }, 1000);
+  });
+}
+
+// Function to fetch a single card's details
+export async function fetchCardDetails(cardId: string): Promise<Card | null> {
+  // Simulate network delay
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const card = mockGalleryData.cards.find(card => card.id === cardId);
+      resolve(card || null);
+    }, 500);
   });
 }
 

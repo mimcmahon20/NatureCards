@@ -68,12 +68,13 @@ export default function Gallery() {
         </div>
       ) : cards.length > 0 ? (
         <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4 md:gap-6">
-          {cards.map((card, index) => (
+          {cards.map((card) => (
             <CardGlance
-              key={index}
+              key={card.id}
               name={card.commonName}
               image={card.image}
               rarity={card.rarity}
+              cardId={card.id}
             />
           ))}
         </div>
