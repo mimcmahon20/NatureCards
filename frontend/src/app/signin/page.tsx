@@ -1,30 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getProviders, signIn } from "next-auth/react";
+import { useState } from "react";
+import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-type Provider = {
-  id: string;
-  name: string;
-};
-
-type Providers = Record<string, Provider> | null;
-
 export default function SignIn() {
-  const [providers, setProviders] = useState<Providers>(null);
   const [email, setEmail] = useState("");
-
-  useEffect(() => {
-    const fetchProviders = async () => {
-      const fetchedProviders = await getProviders();
-      setProviders(fetchedProviders);
-    };
-    fetchProviders();
-  }, []);
 
   const handleEmailSignIn = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

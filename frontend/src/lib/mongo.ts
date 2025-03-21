@@ -2,7 +2,7 @@ import { MongoClient } from "mongodb";
 // This lib is use just to connect to the database in next-auth.
 
 declare global {
-  var _mongoClientPromise: Promise<MongoClient> | undefined;
+  let _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
 if (!process.env.MONGODB_URI) {
