@@ -112,4 +112,4 @@ const UserSchema = new mongoose.Schema({
 });
 
 // Export Schema
-module.exports = mongoose.model('NatureCards', UserSchema, 'Users')
+module.exports = mongoose.model('UserSchema', UserSchema, 'Users')
