@@ -99,14 +99,14 @@ export function CardGlance({
           className={`rounded-lg border-2 ${colors.border} overflow-hidden w-full max-w-full cursor-pointer hover:shadow-md transition-shadow shadow-xl`}
         >
           <div className={`p-1 sm:p-2 ${colors.border} ${colors.header}`}>
-            <h3 className="text-xs sm:text-sm font-medium truncate">{name}</h3>
+            <h3 className="text-sm sm:text-sm font-semibold truncate">{name}</h3>
           </div>
           <div className="relative aspect-square">
             <Image
               src={image || "/placeholder.svg"}
               alt={name}
               fill
-              className="object-cover"
+              className={`object-cover border-t-2 border-b-2 ${colors.border}`}
             />
           </div>
           <div className={`flex justify-center p-1 sm:p-2 ${colors.bg}`}>

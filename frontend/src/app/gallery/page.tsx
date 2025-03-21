@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { CardGlance } from "@/components/CardGlance";
-import { Card, SortOption, fetchGalleryData, sortCards } from "@/lib/gallery";
+import { Card, SortOption, fetchGalleryData, fetchUserGalleryData, sortCards } from "@/lib/gallery";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import {
@@ -11,17 +12,35 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { GalleryExamples } from "./examples";
 
 export default function Gallery() {
   const [cards, setCards] = useState<Card[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>("date");
   const [loading, setLoading] = useState(true);
+  const [username, setUsername] = useState<string>("Your Cards");
+  
+  // Get the userid parameter from the URL
+  const searchParams = useSearchParams();
+  const userId = searchParams.get("userid");
 
   useEffect(() => {
     const getGalleryData = async () => {
       setLoading(true);
       try {
-        const data = await fetchGalleryData();
+        // If userid is provided, fetch that user's gallery
+        let data;
+        if (userId) {
+          data = await fetchUserGalleryData(userId);
+        } else {
+          // Otherwise fetch the current user's gallery
+          data = await fetchGalleryData();
+        }
+        
+        // Update the page title to show whose gallery it is
+        setUsername(userId ? `${data.username}'s Cards` : "Your Cards");
+        
+        // Sort and set the cards
         setCards(sortCards(data.cards, sortBy));
       } catch (error) {
         console.error("Failed to fetch gallery data:", error);
@@ -31,7 +50,7 @@ export default function Gallery() {
     };
 
     getGalleryData();
-  }, [sortBy]);
+  }, [sortBy, userId]);
 
   const handleSort = (option: SortOption) => {
     setSortBy(option);
@@ -39,8 +58,11 @@ export default function Gallery() {
 
   return (
     <div className="container mx-auto px-2 sm:px-4 pt-4 sm:pt-8 pb-24">
+      {/* Show examples for demo purposes */}
+      <GalleryExamples />
+      
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-8 gap-2">
-        <h1 className="text-xl sm:text-2xl font-bold">Your Cards</h1>
+        <h1 className="text-xl sm:text-2xl font-bold">{username}</h1>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="flex items-center gap-2 text-sm sm:text-base w-fit">
@@ -80,7 +102,7 @@ export default function Gallery() {
         </div>
       ) : (
         <div className="text-center py-12">
-          <p className="text-lg text-gray-500">No cards found in your collection</p>
+          <p className="text-lg text-gray-500">No cards found in this collection</p>
         </div>
       )}
     </div>
