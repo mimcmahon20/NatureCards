@@ -56,7 +56,7 @@ const mockGalleryData: GalleryResponse = {
       "rarity": "rare",
       "tradeStatus": false,
       "infoLink": "https://nature-cards-eight.vercel.app/sunflowers",
-      "image": "https://hips.hearstapps.com/hmg-prod/images/close-up-of-blossoming-rose-flower-royalty-free-image-1580853844.jpg?crop=0.668xw:1.00xh;0.248xw,0&resize=980:*",
+      "image": "https://img.freepik.com/free-photo/purple-osteospermum-daisy-flower_1373-16.jpg",
       "family": "Asteraceae",
       "username": "sunflower_fan"
     },
@@ -72,7 +72,7 @@ const mockGalleryData: GalleryResponse = {
       "rarity": "epic",
       "tradeStatus": false,
       "infoLink": "https://nature-cards-eight.vercel.app/orchids",
-      "image": "https://hips.hearstapps.com/hmg-prod/images/close-up-of-blossoming-rose-flower-royalty-free-image-1580853844.jpg?crop=0.668xw:1.00xh;0.248xw,0&resize=980:*",
+      "image": "https://hips.hearstapps.com/hmg-prod/images/summer-flowers-sunflower-1648478429.jpg?crop=0.534xw:1.00xh;0.416xw,0&resize=980:*",
       "family": "Orchidaceae",
       "username": "orchid_enthusiast"
     },
@@ -88,7 +88,7 @@ const mockGalleryData: GalleryResponse = {
       "rarity": "legendary",
       "tradeStatus": false,
       "infoLink": "https://nature-cards-eight.vercel.app/venus-flytrap",
-      "image": "https://hips.hearstapps.com/hmg-prod/images/close-up-of-blossoming-rose-flower-royalty-free-image-1580853844.jpg?crop=0.668xw:1.00xh;0.248xw,0&resize=980:*",
+      "image": "https://contentgrid.homedepot-static.com/hdus/en_US/DTCCOMNEW/Articles/discover-the-secret-language-of-flowers-2022-hero.jpeg",
       "family": "Droseraceae",
       "username": "carnivorous_plant_lover"
     }

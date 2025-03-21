@@ -89,7 +89,7 @@ export function CardDetailed({ plant }: { plant: PlantDetails }) {
   }
 
   return (
-    <div className={`rounded-lg border-2 ${getBorderColor()} w-full overflow-hidden mt-4`}>
+    <div className={`rounded-xl border-2 ${getBorderColor()} w-full overflow-hidden mt-4 shadow-xl`}>
       {/* Plant Image */}
       <div className="relative aspect-square w-full">
         <Image 
