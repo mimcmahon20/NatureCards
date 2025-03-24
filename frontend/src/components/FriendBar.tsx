@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Button, handleProfileClick } from "@/components/ui/button";
 import { Friend } from "@/lib/social";
 
 interface FriendBarProps {
@@ -16,7 +16,7 @@ export function FriendBar({ friend }: FriendBar) {
       <CardContent className="flex-1">
         <p className="font-medium">{friend.username}</p>
       </CardContent>
-      <Button variant="outline" size="sm">
+      <Button variant="outline" size="sm" onClick = {handleProfileClick.bind(this, friend._id)}>
         View Profile
       </Button>
     </Card>

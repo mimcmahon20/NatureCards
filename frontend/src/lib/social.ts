@@ -36,4 +36,9 @@ export async function fetchMockFriendData(): Promise<Friend[]> {
       });
 }
 
+//Get a URL representing the user's gallery. Fetched using the passed in user's ID.
+export function fetchFriendGalleryURL(user_id: string): string {
+    return ("/gallery?userid=" + user_id);
+}
+
 //TODO: get a specific user's friend list from backend. idk where the mockup json is and my brain feels like a wet sponge so you got this
