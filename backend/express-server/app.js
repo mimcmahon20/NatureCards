@@ -38,12 +38,11 @@ router.route("/find/:id").get(async (req, res) => {
 });
 
 router.post("/create", async (req, res) => {
-  const newDocument = await userSchema.create(req.body);
   try {
-    const response = await newDocument.save();
-    return res.status(201).json(newDocument);
-  } catch {
-    return res.status(500).json(response);
+    const newDocument = await userSchema.create(req.body); // Creates and saves the document
+    return res.status(201).json(newDocument); // Respond with the created document
+  } catch (error) {
+    return res.status(500).json({ error: error.message }); // Handle errors properly
   }
 });
 
