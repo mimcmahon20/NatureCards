@@ -12,101 +12,102 @@
  * initiating user would pick a card they want to send to a friend and then pick a card they want from the friend's
  * gallery and send that request to them. The first card will always be the initiators card and the second card will always be
  * owned by the user receiving the request.
- * 
+ *
  * TO VIEW WHAT EACH CARD VARIABLE MEANS SEE THE CARD EXAMPLE IN THE CARD STRUCTURE FILE
  */
 const userExample = {
-  "_id": "ObjectID",
-  "username": "String",
-  "password": "String (hashed)",
-  "email": "String",
-  "cards": [ //Array of card objects
+  _id: "ObjectID",
+  username: "String",
+  password: "String (hashed)",
+  email: "String",
+  cards: [
+    //Array of card objects
     {
-      "creator": "_id",
-      "owner": "_id",
-      "common_name": "String",
-      "scientific_name": "String",
-      "fun_fact": "String",
-      "time_created": "DateTime",
-      "location": "String",
-      "rarity": "String",
-      "trade_status": "Boolean",
-      "info_link": "String",
-      "image": "String"
+      creator: "_id",
+      owner: "_id",
+      common_name: "String",
+      scientific_name: "String",
+      fun_fact: "String",
+      time_created: "DateTime",
+      location: "String",
+      rarity: "String",
+      trade_status: "Boolean",
+      info_link: "String",
+      image_link: "String",
     },
     {
-      "creator": "_id",
-      "owner": "_id",
-      "common_name": "String",
-      "scientific_name": "String",
-      "fun_fact": "String",
-      "time_created": "DateTime",
-      "location": "String",
-      "rarity": "String",
-      "trade_status": "Boolean",
-      "info_link": "String",
-      "image": "String"
-    }
+      creator: "_id",
+      owner: "_id",
+      common_name: "String",
+      scientific_name: "String",
+      fun_fact: "String",
+      time_created: "DateTime",
+      location: "String",
+      rarity: "String",
+      trade_status: "Boolean",
+      info_link: "String",
+      image_link: "String",
+    },
   ],
-  "friends": ["_id1", "_id2"],
-  "trading": [ // Array of card object pairs
+  pending_friends: [{ sending: "_id", receiving: "_id" }, {}],
+  friends: ["_id1", "_id2"],
+  trading: [
+    // Array of card object pairs
     {
-      "offeredCard": {
-        "creator": "_id",
-        "owner": "_id",
-        "common_name": "String",
-        "scientific_name": "String",
-        "fun_fact": "String",
-        "time_created": "DateTime",
-        "location": "String",
-        "rarity": "String",
-        "trade_status": "Boolean",
-        "info_link": "String",
-        "image": "String"
+      offeredCard: {
+        creator: "_id",
+        owner: "_id",
+        common_name: "String",
+        scientific_name: "String",
+        fun_fact: "String",
+        time_created: "DateTime",
+        location: "String",
+        rarity: "String",
+        trade_status: "Boolean",
+        info_link: "String",
+        image_link: "String",
       },
-      "requestedCard": {
-        "creator": "_id",
-        "owner": "_id",
-        "common_name": "String",
-        "scientific_name": "String",
-        "fun_fact": "String",
-        "time_created": "DateTime",
-        "location": "String",
-        "rarity": "String",
-        "trade_status": "Boolean",
-        "info_link": "String",
-        "image": "String"
-      }
+      requestedCard: {
+        creator: "_id",
+        owner: "_id",
+        common_name: "String",
+        scientific_name: "String",
+        fun_fact: "String",
+        time_created: "DateTime",
+        location: "String",
+        rarity: "String",
+        trade_status: "Boolean",
+        info_link: "String",
+        image_link: "String",
+      },
     },
     {
-      "offeredCard": {
-        "creator": "_id",
-        "owner": "_id",
-        "common_name": "String",
-        "scientific_name": "String",
-        "fun_fact": "String",
-        "time_created": "DateTime",
-        "location": "String",
-        "rarity": "String",
-        "trade_status": "Boolean",
-        "info_link": "String",
-        "image": "String"
+      offeredCard: {
+        creator: "_id",
+        owner: "_id",
+        common_name: "String",
+        scientific_name: "String",
+        fun_fact: "String",
+        time_created: "DateTime",
+        location: "String",
+        rarity: "String",
+        trade_status: "Boolean",
+        info_link: "String",
+        image_link: "String",
       },
-      "requestedCard": {
-        "creator": "_id",
-        "owner": "_id",
-        "common_name": "String",
-        "scientific_name": "String",
-        "fun_fact": "String",
-        "time_created": "DateTime",
-        "location": "String",
-        "rarity": "String",
-        "trade_status": "Boolean",
-        "info_link": "String",
-        "image": "String"
-      }
-    }
-  ]
+      requestedCard: {
+        creator: "_id",
+        owner: "_id",
+        common_name: "String",
+        scientific_name: "String",
+        fun_fact: "String",
+        time_created: "DateTime",
+        location: "String",
+        rarity: "String",
+        trade_status: "Boolean",
+        info_link: "String",
+        image_link: "String",
+      },
+    },
+  ],
 };
-
-

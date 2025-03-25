@@ -24,5 +24,5 @@ const cardExample = {
   rarity: "String",
   trade_status: "Boolean",
   info_link: "String",
-  image: "String",
+  image_link: "String",
 };

@@ -14,7 +14,7 @@ app.get(
 // Connect to MongoDB database
 mongoose.Promise = global.Promise;
 mongoose.connect(
-  "mongodb+srv://naturecardsdev:nature123@naturecards.chz2p.mongodb.net/?retryWrites=true&w=majority&appName=naturecards",
+  "mongodb+srv://naturecardsdev:nature123@naturecards.chz2p.mongodb.net/NatureCards?retryWrites=true&w=majority",
   {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -24,127 +24,36 @@ mongoose.connection.once("open", function () {
   console.log("Connection with MongoDB was successful");
 });
 // Create routes for database access
-const tableSchema = require("./model");
+const userSchema = require("./model");
 const router = express.Router();
-
 app.use("/db", router);
 
-// Route to create a card
-router.post("/card/create", async (req, res) => {
+router.route("/find/:id").get(async (req, res) => {
   try {
-    const user = await tableSchema.findById(req.body.userId);
-    user.cards.push(req.body.card);
-    await user.save();
-    res.status(201).json(user.cards);
+    const response = await userSchema.findById(req.params.id);
+    return res.status(200).json(response);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json(response);
   }
 });
 
-// Route to add a friend
-router.post("/friend/add", async (req, res) => {
+router.post("/create", async (req, res) => {
+  const newDocument = await userSchema.create(req.body);
   try {
-    const user = await tableSchema.findById(req.body.userId);
-    user.friends.push(req.body.friendId);
-    await user.save();
-    res.status(201).json(user.friends);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const response = await newDocument.save();
+    return res.status(201).json(newDocument);
+  } catch {
+    return res.status(500).json(response);
   }
 });
 
-// Route to get the friends array
-router.get("/friends/:userId", async (req, res) => {
+router.route("/update/:id").post(async (req, res) => {
   try {
-    const user = await tableSchema.findById(req.params.userId);
-    res.status(200).json(user.friends);
+    const response = await userSchema.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    return res.status(200).json(response);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json(this.response);
   }
 });
-
-// Route to update the entire card array
-router.post("/cards/update", async (req, res) => {
-  try {
-    const user = await tableSchema.findById(req.body.userId);
-    user.cards = req.body.cards;
-    await user.save();
-    res.status(200).json(user.cards);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Route to get the card array
-router.get("/cards/:userId", async (req, res) => {
-  try {
-    const user = await tableSchema.findById(req.params.userId);
-    res.status(200).json(user.cards);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Route to handle login
-router.post("/login", async (req, res) => {
-  try {
-    const user = await tableSchema.findOne({ username: req.body.username });
-    if (user && user.password === req.body.password) {
-      res.status(200).json(user);
-    } else {
-      res.status(401).json({ error: "Invalid credentials" });
-    }
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Route to get user information
-router.get("/user/:userId", async (req, res) => {
-  try {
-    const user = await tableSchema.findById(req.params.userId);
-    res.status(200).json(user);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Route to handle signup
-router.post("/signup", async (req, res) => {
-  try {
-    const newUser = new tableSchema(req.body);
-    await newUser.save();
-    res.status(201).json(newUser);
-  } catch (error) {
-    res.status(500).json(response);
-  }
-});
-
-// Route to create a trade
-router.post("/trade/create", async (req, res) => {
-  try {
-    const user = await tableSchema.findById(req.body.userId);
-    user.trading.requests.push(req.body.trade);
-    await user.save();
-    res.status(201).json(user.trading.requests);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Route to remove a trade
-router.post("/trade/remove", async (req, res) => {
-  try {
-    const user = await tableSchema.findById(req.body.userId);
-    user.trading.requests = user.trading.requests.filter(
-      (trade) => trade._id.toString() !== req.body.tradeId
-    );
-    await user.save();
-    res.status(200).json(user.trading.requests);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // Export the app to be used in bin/www.js
 module.exports = app;
