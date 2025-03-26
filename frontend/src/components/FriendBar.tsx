@@ -12,7 +12,11 @@ export function FriendBar({ friend }: { friend: Friend }) {
       <CardContent className="flex-1">
         <p className="font-medium">{friend.username}</p>
       </CardContent>
-      <Button variant="outline" size="sm" onClick = {handleProfileClick.bind(this, friend._id)}>
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={() => handleProfileClick(friend._id)}
+      >
         View Profile
       </Button>
     </Card>
