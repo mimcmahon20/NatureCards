@@ -1,41 +1,7 @@
-// Feed data types
-export interface FeedUser {
-  id: string;
-  username: string;
-  avatar?: string;
-  cardCount: number;
-}
-
-export interface CardInPost {
-  cardName: string;
-  scientificName?: string;
-  image: string;
-  rarity: "common" | "rare" | "epic" | "legendary";
-  cardId: string; // References card ID in gallery data
-}
-
-export interface CardPost {
-  id: string;
-  user: FeedUser;
-  location: string;
-  timestamp: string;
-  likes: number;
-  comments: number;
-  // Array of cards to be displayed in a scrollable row
-  cards: CardInPost[];
-}
-
-export interface FeedResponse {
-  posts: CardPost[];
-}
-
-// Maps rarity to star count for display
-export const rarityToStars = {
-  common: 1,
-  rare: 2,
-  epic: 3,
-  legendary: 4
-};
+// Import types from the types directory
+import { CardInPost, FeedUser, CardPost, FeedResponse, rarityToStars } from '@/types';
+import { getUserById, getAllUsers, generateFeedForUser } from './mock-db';
+import { createPostFromUserCards } from './feed-adapter';
 
 // Mock feed data
 const mockFeedData: FeedResponse = {
@@ -156,7 +122,46 @@ export async function fetchFeedData(): Promise<FeedResponse> {
   // Simulate network delay
   return new Promise((resolve) => {
     setTimeout(() => {
-      resolve(mockFeedData);
+      // Get the first user as the "current" user
+      const allUsers = getAllUsers();
+      const currentUser = allUsers[0];
+      
+      // Get user's feed data
+      const feedCards = generateFeedForUser(currentUser._id);
+      
+      // Group cards by user to create posts
+      const userCardMap = new Map();
+      
+      // First add the current user's cards
+      userCardMap.set(currentUser._id, []);
+      
+      // Then add cards from friends
+      feedCards.forEach(card => {
+        if (!userCardMap.has(card.owner)) {
+          userCardMap.set(card.owner, []);
+        }
+        userCardMap.get(card.owner).push(card);
+      });
+      
+      // Create posts from grouped cards
+      const posts: CardPost[] = [];
+      
+      // Convert Map entries to array to fix iteration issue
+      Array.from(userCardMap.entries()).forEach(([userId, cards]) => {
+        if (cards.length > 0) {
+          const user = getUserById(userId);
+          if (user) {
+            const location = cards[0].location || 'Unknown location';
+            const timestamp = userId === currentUser._id ? 
+              'Just now' : 
+              `${Math.floor(Math.random() * 24)} hours ago`;
+            
+            posts.push(createPostFromUserCards(user, location, timestamp));
+          }
+        }
+      });
+      
+      resolve({ posts });
     }, 1000);
   });
 }
@@ -164,11 +169,26 @@ export async function fetchFeedData(): Promise<FeedResponse> {
 // Function to fetch feed data for a specific user
 export async function fetchUserFeedData(userId: string): Promise<FeedResponse> {
   // Simulate network delay
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     setTimeout(() => {
-      // Filter posts to only include those from the specified user
-      const userPosts = mockFeedData.posts.filter(post => post.user.id === userId);
-      resolve({ posts: userPosts });
+      const user = getUserById(userId);
+      
+      if (!user) {
+        reject(new Error(`User with ID ${userId} not found`));
+        return;
+      }
+      
+      // Get the user's feed
+      const feedCards = generateFeedForUser(userId);
+      
+      // Create a single post for simplicity
+      const post = createPostFromUserCards(
+        user, 
+        user.cards.length > 0 ? user.cards[0].location || 'Unknown' : 'Unknown',
+        'Just now'
+      );
+      
+      resolve({ posts: [post] });
     }, 1000);
   });
 } 

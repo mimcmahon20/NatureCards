@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Star } from "lucide-react";
-import { Card as CardData, fetchCardDetails } from "@/lib/gallery";
+import { Card } from "@/types";
+import { fetchCardDetails } from "@/lib/gallery";
 import { CardDetailed } from "./CardDetailed";
 import {
   Drawer,
@@ -25,7 +26,7 @@ export function CardGlance({
   rarity,
   cardId,
 }: CardGlanceProps) {
-  const [cardDetails, setCardDetails] = useState<CardData | null>(null);
+  const [cardDetails, setCardDetails] = useState<Card | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleOpenDrawer = async () => {
@@ -152,20 +153,20 @@ export function CardGlance({
               </DrawerClose>
               <CardDetailed
                 plant={{
-                  id: cardDetails.id,
+                  id: cardDetails.id || cardId,
                   name: cardDetails.commonName,
                   image: cardDetails.image,
                   rating: colors.rarityLevel,
-                  rarity: cardDetails.rarity,
+                  rarity: (cardDetails.rarity === "uncommon" ? "rare" : cardDetails.rarity) as "common" | "rare" | "epic" | "legendary",
                   commonName: cardDetails.commonName,
                   scientificName: cardDetails.scientificName,
-                  family: cardDetails.family,
+                  family: cardDetails.family || "",
                   funFact: cardDetails.funFact,
                   timePosted: new Date(
                     cardDetails.timeCreated
                   ).toLocaleDateString(),
                   location: cardDetails.location,
-                  username: cardDetails.username,
+                  username: cardDetails.username || "Unknown",
                 }}
               />
             </div>

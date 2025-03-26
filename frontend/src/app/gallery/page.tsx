@@ -3,7 +3,8 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { CardGlance } from "@/components/CardGlance";
-import { Card, SortOption, fetchGalleryData, fetchUserGalleryData, sortCards } from "@/lib/gallery";
+import { Card, SortOption } from "@/types";
+import { fetchGalleryData, fetchUserGalleryData, sortCards } from "@/lib/gallery";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import {
@@ -93,11 +94,11 @@ function GalleryContent() {
         <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4 md:gap-6">
           {cards.map((card) => (
             <CardGlance
-              key={card.id}
+              key={card.id || `card-${card.commonName}`}
               name={card.commonName}
               image={card.image}
-              rarity={card.rarity}
-              cardId={card.id}
+              rarity={card.rarity === "uncommon" ? "rare" : card.rarity as "common" | "rare" | "epic" | "legendary"}
+              cardId={card.id || `card-${card.commonName.replace(/\s+/g, '-').toLowerCase()}`}
             />
           ))}
         </div>
