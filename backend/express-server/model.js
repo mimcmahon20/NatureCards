@@ -33,6 +33,16 @@ const NatureCardsSchema = new mongoose.Schema(
         },
       },
     },
+    pending_friends: {
+      type: Array,
+      items: {
+        type: Object,
+        properties: {
+          sender: mongoose.Schema.Types.ObjectId,
+          receiver: mongoose.Schema.Types.ObjectId,
+        },
+      },
+    },
     friends: {
       type: Array,
       items: {
