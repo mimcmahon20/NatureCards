@@ -2,13 +2,19 @@
  * Utility functions for image handling, especially for HEIC format conversion
  */
 
-// Import heic2any dynamically to prevent build errors if not installed
-// This way the code will still compile, but will use the fallback if heic2any isn't available
-let heic2any: any;
-try {
-  heic2any = require('heic2any');
-} catch (e) {
-  console.warn('heic2any library not available. HEIC conversion may be limited.');
+// Import heic2any properly with types
+// Using dynamic import to prevent requiring it as a direct dependency
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let heic2any: ((options: { blob: Blob, toType?: string, quality?: number }) => Promise<Blob | Blob[]>) | null = null;
+
+// Only import in browser environment
+if (typeof window !== 'undefined') {
+  // Using dynamic import with try/catch to gracefully handle missing package
+  import('heic2any').then(module => {
+    heic2any = module.default;
+  }).catch(error => {
+    console.warn('heic2any library not available. HEIC conversion may be limited.', error);
+  });
 }
 
 /**
@@ -61,7 +67,7 @@ export async function convertToJpegBase64(file: File): Promise<string> {
     // Last resort: try simple base64 conversion
     try {
       return fileToBase64(file);
-    } catch (e) {
+    } catch (_) {
       throw new Error('Failed to convert image format. Please try a JPEG or PNG image.');
     }
   }

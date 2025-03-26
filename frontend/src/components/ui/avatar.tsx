@@ -28,20 +28,19 @@ export function Avatar({
   );
 }
 
-export interface AvatarImageProps
-  extends React.ImgHTMLAttributes<HTMLImageElement> {}
+export type AvatarImageProps = React.ImgHTMLAttributes<HTMLImageElement>;
 
-export function AvatarImage({ className, ...props }: AvatarImageProps) {
+export function AvatarImage({ className, alt = "", ...props }: AvatarImageProps) {
   return (
     <img
       className={cn("object-cover w-full h-full", className)}
+      alt={alt}
       {...props}
     />
   );
 }
 
-export interface AvatarFallbackProps
-  extends React.HTMLAttributes<HTMLDivElement> {}
+export type AvatarFallbackProps = React.HTMLAttributes<HTMLDivElement>;
 
 export function AvatarFallback({
   className,

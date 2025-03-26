@@ -205,7 +205,7 @@ export async function fetchGalleryData(): Promise<GalleryResponse> {
 // Function to fetch gallery data for a specific user ID
 export async function fetchUserGalleryData(userId: string): Promise<GalleryResponse> {
   // Simulate network delay
-  return new Promise((resolve, reject) => {
+  return new Promise<GalleryResponse>((resolve) => {
     setTimeout(() => {
       // Check if the user exists in our mock data
       if (mockUsersGalleryData[userId]) {

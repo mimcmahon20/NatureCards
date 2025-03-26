@@ -15,7 +15,6 @@ import {
 interface CardGlanceProps {
   name: string;
   image: string;
-  rating?: number;
   rarity: "common" | "rare" | "epic" | "legendary";
   cardId: string; // Added to identify the card
 }
@@ -23,7 +22,6 @@ interface CardGlanceProps {
 export function CardGlance({
   name,
   image,
-  rating,
   rarity,
   cardId,
 }: CardGlanceProps) {
