@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { CardGlance } from "@/components/CardGlance";
 import { Card, SortOption, fetchGalleryData, fetchUserGalleryData, sortCards } from "@/lib/gallery";
@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { GalleryExamples } from "./examples";
 
-export default function Gallery() {
+// Create a client component that uses useSearchParams
+function GalleryContent() {
   const [cards, setCards] = useState<Card[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>("date");
   const [loading, setLoading] = useState(true);
@@ -106,5 +107,25 @@ export default function Gallery() {
         </div>
       )}
     </div>
+  );
+}
+
+// Fallback component to show while loading
+function GalleryLoading() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
+      </div>
+    </div>
+  );
+}
+
+// Main Gallery page component with Suspense boundary
+export default function Gallery() {
+  return (
+    <Suspense fallback={<GalleryLoading />}>
+      <GalleryContent />
+    </Suspense>
   );
 }
