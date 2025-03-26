@@ -6,35 +6,63 @@
  */
 
 import { Card, User, GalleryResponse, ObjectId } from '@/types';
-import { getUserById as getMockUserById, getCardById, generateMockId } from './mock-db';
+import { getUserById as getMockUserById } from './mock-db';
+
+// Type for MongoDB ObjectId reference
+interface MongoDBObjectId {
+  $oid: string;
+}
+
+// Type for MongoDB Date
+interface MongoDBDate {
+  $date: string;
+}
+
+// Helper to safely get string ID from MongoDB ObjectId
+function getIdFromMongo(id: MongoDBObjectId | string | unknown): string {
+  if (typeof id === 'string') return id;
+  if (id && typeof id === 'object' && '$oid' in (id as Record<string, unknown>)) {
+    return (id as MongoDBObjectId).$oid;
+  }
+  return '';
+}
+
+// Helper to safely get date string from MongoDB Date
+function getDateFromMongo(date: MongoDBDate | string | unknown): string {
+  if (typeof date === 'string') return date;
+  if (date && typeof date === 'object' && '$date' in (date as Record<string, unknown>)) {
+    return (date as MongoDBDate).$date;
+  }
+  return new Date().toISOString();
+}
 
 /**
  * Convert snake_case MongoDB card fields to camelCase for frontend use
  */
-export function convertCardFromDB(dbCard: any): Card {
+export function convertCardFromDB(dbCard: Record<string, unknown>): Card {
   return {
-    creator: dbCard.creator.$oid || dbCard.creator,
-    owner: dbCard.owner.$oid || dbCard.owner,
-    commonName: dbCard.common_name,
-    scientificName: dbCard.scientific_name,
-    funFact: dbCard.fun_fact,
-    timeCreated: dbCard.time_created.$date || dbCard.time_created,
-    location: dbCard.location,
-    rarity: dbCard.rarity,
-    tradeStatus: dbCard.trade_status,
-    infoLink: dbCard.info_link,
-    image: dbCard.image_link,
-    id: dbCard._id?.$oid || dbCard._id || generateCardId(),
+    creator: getIdFromMongo(dbCard.creator),
+    owner: getIdFromMongo(dbCard.owner),
+    commonName: String(dbCard.common_name || ''),
+    scientificName: String(dbCard.scientific_name || ''),
+    funFact: String(dbCard.fun_fact || ''),
+    timeCreated: getDateFromMongo(dbCard.time_created),
+    location: String(dbCard.location || ''),
+    rarity: (dbCard.rarity as string || 'common') as "common" | "uncommon" | "rare" | "epic" | "legendary",
+    tradeStatus: Boolean(dbCard.trade_status),
+    infoLink: String(dbCard.info_link || ''),
+    image: String(dbCard.image_link || ''),
+    id: getIdFromMongo(dbCard._id) || generateCardId(),
     // These fields may be added later in the frontend
-    family: dbCard.family || '',
-    username: dbCard.username || ''
+    family: String(dbCard.family || ''),
+    username: String(dbCard.username || '')
   };
 }
 
 /**
  * Convert camelCase frontend card to snake_case for MongoDB storage
  */
-export function convertCardToDB(card: Card): any {
+export function convertCardToDB(card: Card): Record<string, unknown> {
   return {
     creator: card.creator,
     owner: card.owner,
@@ -53,32 +81,53 @@ export function convertCardToDB(card: Card): any {
 /**
  * Convert a MongoDB user document to our frontend User type
  */
-export function convertUserFromDB(dbUser: any): User {
+export function convertUserFromDB(dbUser: Record<string, unknown>): User {
   return {
-    _id: dbUser._id.$oid || dbUser._id,
-    username: dbUser.username,
-    email: dbUser.email,
-    cards: dbUser.cards?.map(convertCardFromDB) || [],
-    pendingFriends: dbUser.pending_friends?.map((pf: any) => ({
-      sending: pf.sending.$oid || pf.sending,
-      receiving: pf.receiving.$oid || pf.receiving
-    })) || [],
-    friends: dbUser.friends?.map((f: any) => f.$oid || f) || [],
-    trading: dbUser.trading?.map((t: any) => ({
-      offeredCard: convertCardFromDB(t.offeredCard),
-      requestedCard: convertCardFromDB(t.requestedCard)
-    })) || []
+    _id: getIdFromMongo(dbUser._id),
+    username: String(dbUser.username || ''),
+    email: String(dbUser.email || ''),
+    cards: Array.isArray(dbUser.cards) 
+      ? dbUser.cards.map(card => convertCardFromDB(card as Record<string, unknown>))
+      : [],
+    pendingFriends: Array.isArray(dbUser.pending_friends)
+      ? dbUser.pending_friends.map(pf => ({
+          sending: getIdFromMongo((pf as Record<string, unknown>).sending),
+          receiving: getIdFromMongo((pf as Record<string, unknown>).receiving)
+        }))
+      : [],
+    friends: Array.isArray(dbUser.friends)
+      ? dbUser.friends.map(f => getIdFromMongo(f))
+      : [],
+    trading: Array.isArray(dbUser.trading)
+      ? dbUser.trading.map(t => ({
+          offeredCard: convertCardFromDB((t as Record<string, unknown>).offeredCard as Record<string, unknown>),
+          requestedCard: convertCardFromDB((t as Record<string, unknown>).requestedCard as Record<string, unknown>)
+        }))
+      : []
   };
 }
 
 /**
- * Convert a MongoDB user document to a GalleryResponse for the gallery view
+ * Convert a MongoDB user document or User object to a GalleryResponse for the gallery view
  */
-export function convertUserToGalleryResponse(dbUser: any): GalleryResponse {
+export function convertUserToGalleryResponse(dbUser: Record<string, unknown> | User): GalleryResponse {
+  if ('username' in dbUser && '_id' in dbUser && 'cards' in dbUser) {
+    // It's already a User object
+    const user = dbUser as User;
+    return {
+      _id: user._id,
+      username: user.username,
+      cards: user.cards
+    };
+  }
+  
+  // Otherwise treat as a MongoDB document
   return {
-    _id: dbUser._id.$oid || dbUser._id,
-    username: dbUser.username,
-    cards: dbUser.cards?.map(convertCardFromDB) || []
+    _id: getIdFromMongo(dbUser._id),
+    username: String(dbUser.username || ''),
+    cards: Array.isArray(dbUser.cards)
+      ? dbUser.cards.map(card => convertCardFromDB(card as Record<string, unknown>))
+      : []
   };
 }
 

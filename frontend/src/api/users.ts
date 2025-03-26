@@ -5,7 +5,7 @@
  */
 
 import { User, Card, GalleryResponse, ObjectId } from '@/types';
-import { convertUserFromDB, convertCardFromDB, convertUserToGalleryResponse, convertCardToDB } from '@/lib/api-adapter';
+import { convertUserFromDB, convertUserToGalleryResponse, convertCardToDB } from '@/lib/api-adapter';
 
 // Base API URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';

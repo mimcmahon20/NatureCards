@@ -1,5 +1,5 @@
 // Import types from the types directory
-import { CardInPost, FeedUser, CardPost, FeedResponse, Card } from '@/types';
+import { CardPost, FeedResponse, Card } from '@/types';
 import { getUserById, getAllUsers, generateFeedForUser } from './mock-db';
 import { createPostFromUserCards } from './feed-adapter';
 

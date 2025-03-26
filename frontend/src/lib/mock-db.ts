@@ -149,12 +149,6 @@ function createCard(baseCard: Partial<Card>, creator: ObjectId, owner: ObjectId)
 // Generate a set of random cards for a user
 function generateCardsForUser(userId: ObjectId, cardCount: number): Card[] {
   const cards: Card[] = [];
-  const allCardTemplates = [
-    ...commonCards,
-    ...rareCards,
-    ...epicCards,
-    ...legendaryCards
-  ];
   
   // Determine how many of each rarity to give (weighted distribution)
   const legendary = Math.floor(Math.random() * Math.min(2, cardCount));
@@ -231,9 +225,9 @@ Object.keys(mockUsers).forEach(userId => {
   });
 });
 
-// Create some friend relationships (bidirectional)
+// Create some friend relationships
 const userIds = Object.keys(mockUsers);
-userIds.forEach((userId, index) => {
+userIds.forEach((userId) => {
   // Each user has 1-5 friends
   const friendCount = 1 + Math.floor(Math.random() * 5);
   const possibleFriends = userIds.filter(id => id !== userId); // Can't be friends with yourself
@@ -259,7 +253,7 @@ userIds.forEach((userId, index) => {
 });
 
 // Create some pending friend requests
-userIds.forEach((userId, index) => {
+userIds.forEach((userId) => {
   // Create 0-2 pending friend requests
   const pendingCount = Math.floor(Math.random() * 3);
   
@@ -296,7 +290,7 @@ userIds.forEach((userId, index) => {
 });
 
 // Create some trading offers
-userIds.forEach((userId, index) => {
+userIds.forEach((userId) => {
   // 30% chance to have an active trade offer
   if (Math.random() < 0.3) {
     // Find a random friend
