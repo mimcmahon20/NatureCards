@@ -67,7 +67,7 @@ export async function convertToJpegBase64(file: File): Promise<string> {
     // Last resort: try simple base64 conversion
     try {
       return fileToBase64(file);
-    } catch (/* Intentionally blank catch */) {
+    } catch (unusedError) {
       // We don't need the error object here, just throw a new meaningful error
       throw new Error('Failed to convert image format. Please try a JPEG or PNG image.');
     }
