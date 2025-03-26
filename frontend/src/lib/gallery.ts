@@ -1,13 +1,13 @@
 // Import types from the types directory
 import { Card, GalleryResponse, SortOption } from '@/types';
-import { convertCardFromDB, convertUserToGalleryResponse } from './api-adapter';
 import { 
   getUserById, 
   getAllUsers, 
   getCardById
 } from './mock-db';
 
-// Mock data for multiple users' galleries
+// Mock data kept as reference (commented out to avoid linter error)
+/*
 const mockUsersGalleryData: Record<string, GalleryResponse> = {
   // Default user - nature_lover
   "12345": {
@@ -175,6 +175,7 @@ const mockUsersGalleryData: Record<string, GalleryResponse> = {
     ]
   }
 };
+*/
 
 // Function to simulate fetching gallery data from backend (no user specified - returns default user)
 export async function fetchGalleryData(): Promise<GalleryResponse> {

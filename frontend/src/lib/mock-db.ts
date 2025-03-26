@@ -52,33 +52,8 @@ const commonCards: Partial<Card>[] = [
     rarity: "common",
     tradeStatus: false,
     infoLink: "https://example.com/lavender",
-    image: "https://www.thespruce.com/thmb/NHSv9_xwqLRWtQ_aNzL7bJhbetA=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/GettyImages-683042892-58e73fa05f9b58ef7e8e3b50.jpg",
+    image: "https://upload.wikimedia.org/wikipedia/commons/7/7e/Single_lavender_flower02.jpg",
     family: "Lamiaceae",
-  }
-];
-
-const uncommonCards: Partial<Card>[] = [
-  {
-    commonName: "Sunflower",
-    scientificName: "Helianthus annuus",
-    funFact: "Sunflowers track the sun's movement across the sky, a behavior known as heliotropism.",
-    location: "Richmond, VA",
-    rarity: "uncommon",
-    tradeStatus: false,
-    infoLink: "https://nature-cards-eight.vercel.app/sunflowers",
-    image: "https://hips.hearstapps.com/hmg-prod/images/summer-flowers-sunflower-1648478429.jpg?crop=0.534xw:1.00xh;0.416xw,0&resize=980:*",
-    family: "Asteraceae",
-  },
-  {
-    commonName: "Cactus",
-    scientificName: "Cactaceae",
-    funFact: "Cacti can survive in extremely dry environments by storing water in their stems.",
-    location: "Deserts",
-    rarity: "uncommon",
-    tradeStatus: false,
-    infoLink: "https://example.com/cactus",
-    image: "https://www.almanac.com/sites/default/files/styles/or/public/image_nodes/cactus-assorted.jpg?itok=8y9B76tW",
-    family: "Cactaceae",
   }
 ];
 
@@ -91,19 +66,30 @@ const rareCards: Partial<Card>[] = [
     rarity: "rare",
     tradeStatus: false,
     infoLink: "https://nature-cards-eight.vercel.app/orchids",
-    image: "https://cf.ltkcdn.net/garden/images/orig/204304-1600x1066-White-Cattleya-Orchid.jpg",
+    image: "https://media.istockphoto.com/id/1369976302/photo/beautiful-purple-orchid-phalaenopsis-flower-background.jpg?s=612x612&w=0&k=20&c=ikZ9PfJ8ObS-adfhuQ9yJNOIWHwlJlAh7LYvfKnlIbI=",
     family: "Orchidaceae",
   },
   {
-    commonName: "Red Fox",
-    scientificName: "Vulpes vulpes",
-    funFact: "Red foxes have an excellent sense of hearing - they can hear rodents digging underground and a watch ticking from 40 yards away.",
-    location: "Shenandoah National Park, VA",
+    commonName: "Sunflower",
+    scientificName: "Helianthus annuus",
+    funFact: "Sunflowers track the sun's movement across the sky, a behavior known as heliotropism.",
+    location: "Richmond, VA",
     rarity: "rare",
     tradeStatus: false,
-    infoLink: "https://nature-cards-eight.vercel.app/red-fox",
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/Wild_red_fox_%28Vulpes_vulpes%29.jpg/800px-Wild_red_fox_%28Vulpes_vulpes%29.jpg",
-    family: "Canidae",
+    infoLink: "https://nature-cards-eight.vercel.app/sunflowers",
+    image: "https://hips.hearstapps.com/hmg-prod/images/summer-flowers-sunflower-1648478429.jpg?crop=0.534xw:1.00xh;0.416xw,0&resize=980:*",
+    family: "Asteraceae",
+  },
+  {
+    commonName: "Cactus",
+    scientificName: "Cactaceae",
+    funFact: "Cacti can survive in extremely dry environments by storing water in their stems.",
+    location: "Deserts",
+    rarity: "rare",
+    tradeStatus: false,
+    infoLink: "https://example.com/cactus",
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSlzP9L6gSHOxVcfjO-SUhcdMRFYuRteyyXIg&s",
+    family: "Cactaceae",
   }
 ];
 
@@ -130,7 +116,7 @@ const legendaryCards: Partial<Card>[] = [
     rarity: "legendary",
     tradeStatus: false,
     infoLink: "https://nature-cards-eight.vercel.app/venus-flytrap",
-    image: "https://contentgrid.homedepot-static.com/hdus/en_US/DTCCOMNEW/Articles/discover-the-secret-language-of-flowers-2022-hero.jpeg",
+    image: "https://ekkekzo4n8t.exactdn.com/wp-content/uploads/2023/09/IMG_1090.jpg?strip=all&lossy=1&sharp=1&ssl=1",
     family: "Droseraceae",
   },
   {
@@ -141,7 +127,7 @@ const legendaryCards: Partial<Card>[] = [
     rarity: "legendary",
     tradeStatus: false,
     infoLink: "https://nature-cards-eight.vercel.app/sequoia",
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Sequoiadendron_giganteum_at_Mariposa_Grove.jpg/800px-Sequoiadendron_giganteum_at_Mariposa_Grove.jpg",
+    image: "https://i0.wp.com/footpathsblog.com/wp-content/uploads/2024/08/D08D4E4C-F260-4575-967C-E4659336EFDB-768x1024.jpg?resize=723%2C964&ssl=1",
     family: "Cupressaceae",
   }
 ];
@@ -165,7 +151,6 @@ function generateCardsForUser(userId: ObjectId, cardCount: number): Card[] {
   const cards: Card[] = [];
   const allCardTemplates = [
     ...commonCards,
-    ...uncommonCards,
     ...rareCards,
     ...epicCards,
     ...legendaryCards
@@ -175,8 +160,7 @@ function generateCardsForUser(userId: ObjectId, cardCount: number): Card[] {
   const legendary = Math.floor(Math.random() * Math.min(2, cardCount));
   const epic = Math.floor(Math.random() * Math.min(3, cardCount - legendary));
   const rare = Math.floor(Math.random() * Math.min(4, cardCount - legendary - epic));
-  const uncommon = Math.floor(Math.random() * Math.min(5, cardCount - legendary - epic - rare));
-  const common = cardCount - legendary - epic - rare - uncommon;
+  const common = cardCount - legendary - epic - rare;
   
   // Add legendary cards
   for (let i = 0; i < legendary; i++) {
@@ -193,12 +177,6 @@ function generateCardsForUser(userId: ObjectId, cardCount: number): Card[] {
   // Add rare cards
   for (let i = 0; i < rare; i++) {
     const template = rareCards[Math.floor(Math.random() * rareCards.length)];
-    cards.push(createCard(template, userId, userId));
-  }
-  
-  // Add uncommon cards
-  for (let i = 0; i < uncommon; i++) {
-    const template = uncommonCards[Math.floor(Math.random() * uncommonCards.length)];
     cards.push(createCard(template, userId, userId));
   }
   

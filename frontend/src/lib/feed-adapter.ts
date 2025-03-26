@@ -4,8 +4,8 @@
  * This module provides functions to create feed data from user documents in the MongoDB database
  */
 
-import { Card, User, CardInPost, FeedUser, CardPost, FeedResponse } from '@/types';
-import { convertCardFromDB, fetchUserById } from './api-adapter';
+import { User, CardInPost, FeedUser, CardPost, FeedResponse } from '@/types';
+import { fetchUserById } from './api-adapter';
 
 /**
  * Convert a user's cards into a feed post
