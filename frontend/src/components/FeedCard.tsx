@@ -3,8 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { MapPin, Clock } from "lucide-react";
-import { CardPost } from "@/lib/feed";
+import { CardPost } from "@/types";
 import { CardGlance } from "./CardGlance";
+import { Avatar } from "@/components/ui/avatar";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface FeedCardProps {
   post: CardPost;
