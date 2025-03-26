@@ -5,9 +5,6 @@ import Link from "next/link";
 import { MapPin, Clock } from "lucide-react";
 import { CardPost } from "@/types";
 import { CardGlance } from "./CardGlance";
-import { Avatar } from "@/components/ui/avatar";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 
 interface FeedCardProps {
   post: CardPost;
@@ -49,7 +46,7 @@ export function FeedCard({ post }: FeedCardProps) {
               <CardGlance
                 name={card.cardName}
                 image={card.image}
-                rarity={card.rarity}
+                rarity={card.rarity === "uncommon" ? "rare" : card.rarity as "common" | "rare" | "epic" | "legendary"}
                 cardId={card.cardId}
               />
             </div>
