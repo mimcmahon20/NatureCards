@@ -67,8 +67,9 @@ export async function convertToJpegBase64(file: File): Promise<string> {
     // Last resort: try simple base64 conversion
     try {
       return fileToBase64(file);
-    } catch (unusedError) {
-      // We don't need the error object here, just throw a new meaningful error
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_error) {
+      // We intentionally don't use the error object here
       throw new Error('Failed to convert image format. Please try a JPEG or PNG image.');
     }
   }
