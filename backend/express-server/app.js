@@ -1,41 +1,58 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-
-var app = express();
-
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade');
-
-app.use(logger('dev'));
+// Import modules
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+// Set the web server
+const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(cors());
+app.get(
+  "/",
+  (req, res) => res.send("<h1>NatureCards: Server</h1>") // Home web page
+);
+// Connect to MongoDB database
+mongoose.Promise = global.Promise;
+mongoose.connect(
+  "mongodb+srv://naturecardsdev:nature123@naturecards.chz2p.mongodb.net/NatureCards?retryWrites=true&w=majority",
+  {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  }
+);
+mongoose.connection.once("open", function () {
+  console.log("Connection with MongoDB was successful");
+});
+// Create routes for database access
+const userSchema = require("./model");
+const router = express.Router();
+app.use("/db", router);
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
-
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
+router.route("/find/:id").get(async (req, res) => {
+  try {
+    const response = await userSchema.findById(req.params.id);
+    return res.status(200).json(response);
+  } catch (error) {
+    return res.status(500).json(response);
+  }
 });
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
+router.post("/create", async (req, res) => {
+  try {
+    const newDocument = await userSchema.create(req.body); // Creates and saves the document
+    return res.status(201).json(newDocument); // Respond with the created document
+  } catch (error) {
+    return res.status(500).json({ error: error.message }); // Handle errors properly
+  }
 });
 
+router.route("/update/:id").post(async (req, res) => {
+  try {
+    const response = await userSchema.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    return res.status(200).json(response);
+  } catch (error) {
+    return res.status(500).json(this.response);
+  }
+});
+// Export the app to be used in bin/www.js
 module.exports = app;
