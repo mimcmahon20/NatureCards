@@ -19,6 +19,7 @@ const buttonVariants = cva(
         secondary:
           "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
+        disabled: "bg-primary/90 text-primary-foreground shadow cursor-default",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
@@ -34,12 +35,6 @@ const buttonVariants = cva(
     },
   }
 )
-
-//Social "view profile" button click
-export const handleProfileClick = (friend_id: string) => {
-  console.log(fetchFriendGalleryURL(friend_id));
-  window.location.href = '/gallery?userid=' + friend_id;
-}
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
