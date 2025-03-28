@@ -1,11 +1,15 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { MapPin, Camera, Upload, Users, Search, Plus } from "lucide-react";
+import { Camera, Upload, Users, Search, Plus, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { identifyPlant } from "@/lib/plant-id";
+import { convertToJpegBase64 } from "@/lib/image-utils";
+import { CardDetailed } from "@/components/CardDetailed";
+import Image from "next/image";
 
 // Temporary type for friends
 type Friend = {
@@ -16,10 +20,25 @@ type Friend = {
 
 export default function Home() {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [team, setTeam] = useState<{ name: string; members: number } | null>(
-    null
-  );
+  const [team, setTeam] = useState<{ name: string; members: number } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isIdentifying, setIsIdentifying] = useState(false);
+  const [identifiedPlant, setIdentifiedPlant] = useState<{
+    id: string;
+    name: string;
+    image: string;
+    rating: number;
+    rarity: "common" | "rare" | "epic" | "legendary";
+    commonName: string;
+    scientificName: string;
+    family: string;
+    funFact: string;
+    timePosted: string;
+    location: string;
+    username: string;
+  } | null>(null);
+  const [showIdentificationDrawer, setShowIdentificationDrawer] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Temporary mock data
   const mockFriends: Friend[] = [
@@ -40,11 +59,94 @@ export default function Home() {
     { id: "3", teamName: "Plant Lovers", invitedBy: "Chris Wong" },
   ];
 
-  const handleImageCapture = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Determine rarity based on probability
+  const determineRarity = (probability: number): "common" | "uncommon" | "rare" | "epic" | "legendary" => {
+    if (probability > 0.95) return "legendary";
+    if (probability > 0.9) return "epic";
+    if (probability > 0.8) return "rare";
+    if (probability > 0.7) return "uncommon";
+    return "common";
+  };
+
+  // Determine star rating based on rarity
+  const getRatingFromRarity = (rarity: string): number => {
+    switch (rarity) {
+      case "legendary": return 4;
+      case "epic": return 3;
+      case "rare": return 2;
+      case "uncommon": return 1;
+      default: return 1;
+    }
+  };
+
+  const handleImageCapture = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    setErrorMessage(null);
+    
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setCapturedImage(imageUrl);
+      try {
+        // Create URL for preview
+        const imageUrl = URL.createObjectURL(file);
+        setCapturedImage(imageUrl);
+        
+        // Start plant identification
+        setIsIdentifying(true);
+        
+        // Convert image to base64
+        const base64Image = await convertToJpegBase64(file);
+        
+        // Call the Plant.id API
+        const plantIdResponse = await identifyPlant(base64Image);
+        
+        // Get the top suggestion
+        const topResult = plantIdResponse.result.classification.suggestions[0];
+        
+        if (!topResult) {
+          throw new Error("No plant identification results found");
+        }
+        
+        // Determine rarity based on confidence
+        const rarity = determineRarity(topResult.probability);
+        
+        // Extract the first sentence from description for fun fact
+        const getFirstSentence = (text: string | undefined): string => {
+          if (!text) return "This plant was identified using AI technology!";
+          
+          // Match for a sentence ending with period, question mark, or exclamation point
+          const sentenceMatch = text.match(/^.*?[.!?](?:\s|$)/);
+          return sentenceMatch ? sentenceMatch[0].trim() : text.substring(0, 100) + "...";
+        };
+        
+        // Create plant details object for CardDetailed
+        const plantDetails = {
+          id: topResult.id,
+          name: topResult.name,
+          image: imageUrl,
+          rating: getRatingFromRarity(rarity),
+          rarity: rarity === "uncommon" ? "rare" : rarity as "common" | "rare" | "epic" | "legendary",
+          commonName: topResult.name,
+          scientificName: topResult.details?.taxonomy?.genus 
+            ? `${topResult.details.taxonomy.genus} sp.`
+            : topResult.name,
+          family: topResult.details?.taxonomy?.family || "Unknown",
+          funFact: getFirstSentence(topResult.details?.description?.value) || 
+            "This plant was identified using AI technology! No additional information is available.",
+          timePosted: new Date().toLocaleDateString(),
+          location: "Your location",
+          username: "You"
+        };
+        
+        // Set the identified plant
+        setIdentifiedPlant(plantDetails);
+        
+        // Open the drawer to show results
+        setShowIdentificationDrawer(true);
+      } catch (error) {
+        console.error("Error during plant identification:", error);
+        setErrorMessage("Failed to identify plant. Please try again.");
+      } finally {
+        setIsIdentifying(false);
+      }
     }
   };
 
@@ -228,16 +330,80 @@ export default function Home() {
         />
       </div>
 
-      {capturedImage && (
+      {/* Plant Identification Drawer */}
+      <Drawer open={showIdentificationDrawer} onOpenChange={setShowIdentificationDrawer}>
+        <DrawerContent className="min-h-[70vh] max-h-[90vh]">
+          <div className="p-4 overflow-y-auto">
+            {identifiedPlant && (
+              <div className="max-w-md mx-auto">
+                <h2 className="text-xl font-bold mb-4 text-center">Identified Plant</h2>
+                <CardDetailed plant={identifiedPlant} />
+                <div className="mt-4 flex justify-center">
+                  <Button 
+                    onClick={() => setShowIdentificationDrawer(false)}
+                    className="mx-2"
+                  >
+                    Close
+                  </Button>
+                  <Button 
+                    className="mx-2 bg-green-600 hover:bg-green-700"
+                    onClick={() => {
+                      // Here you would save the card to the user's collection
+                      // For now, just close the drawer
+                      setShowIdentificationDrawer(false);
+                    }}
+                  >
+                    Add to Collection
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {capturedImage && isIdentifying && (
+        <div className="fixed inset-0 bg-black/50 flex flex-col items-center justify-center p-4">
+          <div className="bg-white p-6 rounded-lg max-w-lg w-full mx-4 text-center">
+            <div className="relative w-full aspect-square max-h-[400px] rounded-lg mb-4 overflow-hidden">
+              <Image
+                src={capturedImage}
+                alt="Captured"
+                fill
+                sizes="(max-width: 768px) 100vw, 600px"
+                priority
+                className="object-contain"
+              />
+            </div>
+            <div className="flex flex-col items-center justify-center gap-4">
+              <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+              <p className="text-lg font-medium">Identifying plant...</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {capturedImage && errorMessage && !isIdentifying && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white p-4 rounded-lg max-w-lg w-full mx-4">
-            <img
-              src={capturedImage}
-              alt="Captured"
-              className="w-full h-auto rounded-lg"
-            />
+            <div className="relative w-full aspect-square max-h-[400px] rounded-lg mb-4 overflow-hidden">
+              <Image
+                src={capturedImage}
+                alt="Captured"
+                fill
+                sizes="(max-width: 768px) 100vw, 600px"
+                priority
+                className="object-contain"
+              />
+            </div>
+            <div className="text-center mb-4">
+              <p className="text-red-500">{errorMessage}</p>
+            </div>
             <button
-              onClick={() => setCapturedImage(null)}
+              onClick={() => {
+                setCapturedImage(null);
+                setErrorMessage(null);
+              }}
               className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md w-full"
             >
               Close
