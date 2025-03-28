@@ -20,7 +20,7 @@ const NavElement = ({ href, icon, label }: NavElementProps) => {
       href={href}
       className={cn(
         "flex flex-col items-center font-medium justify-center p-0 text-muted-foreground transition-all duration-300",
-        isActive && " text-green-600"
+        isActive && "text-[#9fb873]"
       )}
     >
       <div className="w-[50px] h-[50px] flex items-center justify-center">
