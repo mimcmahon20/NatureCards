@@ -12,8 +12,8 @@ const mongoose = require("mongoose");
 const NatureCardsSchema = new mongoose.Schema(
   {
     username: String,
-    password: String,
     email: String,
+    profile_picture: String,
     cards: {
       type: Array,
       items: {
