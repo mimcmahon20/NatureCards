@@ -106,6 +106,7 @@ export default function UserSettings() {
                   "https://www.shutterstock.com/image-vector/profile-default-avatar-icon-user-600nw-2463844171.jpg"
                 }
                 className="rounded-full object-cover"
+                alt="profile picture"
               />
             </Avatar>
             <label
