@@ -7,7 +7,7 @@ interface FriendRequestBarProps {
   friend_request: FriendRequest;
 }
 
-export function FriendRequestBar({ friend_request }: FriendRequestBarProps) {
+export function FriendRequestBar({ friend_request }: FriendRequestBarPropsProps) {
   return (
     <Card className="flex items-center p-4">
       <Avatar className="w-12 h-12 mr-4">

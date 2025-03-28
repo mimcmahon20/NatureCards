@@ -6,6 +6,7 @@ import { FriendBar } from "@/components/FriendBar";
 import { FriendRequestBar } from "@/components/FriendRequestBar";
 import { TradeRequestBar } from "@/components/TradeRequestBar";
 import { Button } from "@/components/ui/button";
+// import { Card, fetchCardDetails } from "@/lib/gallery";
 
 export default function Social() {
   const [friends, setFriends] = useState<Friend[]>([]);
