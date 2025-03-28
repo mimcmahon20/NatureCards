@@ -6,7 +6,6 @@ import { FriendBar } from "@/components/FriendBar";
 import { FriendRequestBar } from "@/components/FriendRequestBar";
 import { TradeRequestBar } from "@/components/TradeRequestBar";
 import { Button } from "@/components/ui/button";
-import { Card, fetchCardDetails } from "@/lib/gallery";
 
 export default function Social() {
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -46,8 +45,8 @@ export default function Social() {
         <h1 className="text-xl font-bold">Friend Requests</h1>
       </div>
       <div className="space-y-4">
-        {friendRequests.map((friend) => (
-          <FriendRequestBar key={friend._id} friend={friend} />
+        {friendRequests.map((friend_request) => (
+          <FriendRequestBar key={friend_request._id} friend_request={friend_request} />
         ))}
       </div>
       <div className="flex justify-between items-center mt-12 mb-6">
