@@ -1,8 +1,10 @@
 import { MongoClient } from "mongodb";
 // This lib is use just to connect to the database in next-auth.
 
+// Declare global type augmentation
 declare global {
-  let _mongoClientPromise: Promise<MongoClient> | undefined;
+  // eslint-disable-next-line no-var
+  var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
 if (!process.env.MONGODB_URI) {

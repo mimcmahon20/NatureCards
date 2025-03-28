@@ -1,4 +1,5 @@
 import * as React from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 export interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -28,20 +29,24 @@ export function Avatar({
   );
 }
 
-export interface AvatarImageProps
-  extends React.ImgHTMLAttributes<HTMLImageElement> {}
+export type AvatarImageProps = Omit<React.ComponentProps<typeof Image>, "fill"> & {
+  src: string;
+};
 
-export function AvatarImage({ className, ...props }: AvatarImageProps) {
+export function AvatarImage({ className, alt = "", src, ...props }: AvatarImageProps) {
   return (
-    <img
-      className={cn("object-cover w-full h-full", className)}
+    <Image
+      className={cn("object-cover", className)}
+      alt={alt}
+      src={src}
+      fill
+      sizes="(max-width: 768px) 100vw, 33vw"
       {...props}
     />
   );
 }
 
-export interface AvatarFallbackProps
-  extends React.HTMLAttributes<HTMLDivElement> {}
+export type AvatarFallbackProps = React.HTMLAttributes<HTMLDivElement>;
 
 export function AvatarFallback({
   className,

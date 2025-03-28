@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { FeedCard } from "@/components/FeedCard";
-import { CardPost, fetchFeedData } from "@/lib/feed";
+import { CardPost } from "@/types";
+import { fetchFeedData } from "@/lib/feed";
 
 export default function Feed() {
   const [posts, setPosts] = useState<CardPost[]>([]);

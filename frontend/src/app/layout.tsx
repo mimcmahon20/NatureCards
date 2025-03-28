@@ -15,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`antialiased relative min-h-screen`}
+        className={`antialiased relative min-h-screen mb-16`}
       >
         {children}
         <Navigation />

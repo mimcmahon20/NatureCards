@@ -1,29 +1,13 @@
-// Types for card data
-export interface Card {
-  creator: number;
-  owner: number;
-  commonName: string;
-  scientificName: string;
-  funFact: string;
-  timeCreated: string;
-  location: string;
-  rarity: "common" | "rare" | "epic" | "legendary";
-  tradeStatus: boolean;
-  infoLink: string;
-  image: string;
-  // Additional fields for detailed view
-  id: string;
-  family: string;
-  username: string;
-}
+// Import types from the types directory
+import { Card, GalleryResponse, SortOption } from '@/types';
+import { 
+  getUserById, 
+  getAllUsers, 
+  getCardById
+} from './mock-db';
 
-export interface GalleryResponse {
-  _id: string;
-  username: string;
-  cards: Card[];
-}
-
-// Mock data for multiple users' galleries
+// Mock data kept as reference (commented out to avoid linter error)
+/*
 const mockUsersGalleryData: Record<string, GalleryResponse> = {
   // Default user - nature_lover
   "12345": {
@@ -32,8 +16,8 @@ const mockUsersGalleryData: Record<string, GalleryResponse> = {
     "cards": [
       {
         "id": "card-1",
-        "creator": 1,
-        "owner": 1,
+        "creator": "67e1ea1fb15cf00091493962",
+        "owner": "67e1ea1fb15cf00091493962",
         "commonName": "Rose",
         "scientificName": "Rosa",
         "funFact": "Roses are one of the oldest flowers in existence, with fossil evidence showing they're 35 million years old.",
@@ -48,8 +32,8 @@ const mockUsersGalleryData: Record<string, GalleryResponse> = {
       },
       {
         "id": "card-2",
-        "creator": 2,
-        "owner": 1,
+        "creator": "67e1ea1fb15cf00091493963",
+        "owner": "67e1ea1fb15cf00091493962",
         "commonName": "Sunflower",
         "scientificName": "Helianthus annuus",
         "funFact": "Sunflowers track the sun's movement across the sky, a behavior known as heliotropism.",
@@ -64,8 +48,8 @@ const mockUsersGalleryData: Record<string, GalleryResponse> = {
       },
       {
         "id": "card-3",
-        "creator": 3,
-        "owner": 1,
+        "creator": "67e1ea1fb15cf00091493964",
+        "owner": "67e1ea1fb15cf00091493962",
         "commonName": "Orchid",
         "scientificName": "Orchidaceae",
         "funFact": "Orchids have the smallest seeds in the world, resembling fine dust.",
@@ -80,8 +64,8 @@ const mockUsersGalleryData: Record<string, GalleryResponse> = {
       },
       {
         "id": "card-4",
-        "creator": 4,
-        "owner": 1,
+        "creator": "67e1ea1fb15cf00091493965",
+        "owner": "67e1ea1fb15cf00091493962",
         "commonName": "Venus Flytrap",
         "scientificName": "Dionaea muscipula",
         "funFact": "Venus flytraps can count! They only snap shut when they detect two touches within 20 seconds.",
@@ -103,8 +87,8 @@ const mockUsersGalleryData: Record<string, GalleryResponse> = {
     "cards": [
       {
         "id": "card-5",
-        "creator": 5,
-        "owner": 2,
+        "creator": "67e1ea1fb15cf00091493966",
+        "owner": "67e1ea1fb15cf00091493966",
         "commonName": "Giant Sequoia",
         "scientificName": "Sequoiadendron giganteum",
         "funFact": "Giant sequoias are the world's largest single trees by volume and can live for over 3,000 years.",
@@ -119,8 +103,8 @@ const mockUsersGalleryData: Record<string, GalleryResponse> = {
       },
       {
         "id": "card-6",
-        "creator": 6,
-        "owner": 2,
+        "creator": "67e1ea1fb15cf00091493967",
+        "owner": "67e1ea1fb15cf00091493966",
         "commonName": "Red Fox",
         "scientificName": "Vulpes vulpes",
         "funFact": "Red foxes have an excellent sense of hearing - they can hear rodents digging underground and a watch ticking from 40 yards away.",
@@ -142,8 +126,8 @@ const mockUsersGalleryData: Record<string, GalleryResponse> = {
     "cards": [
       {
         "id": "card-7",
-        "creator": 7,
-        "owner": 3,
+        "creator": "67e1ea1fb15cf00091493968",
+        "owner": "67e1ea1fb15cf00091493968",
         "commonName": "Monarch Butterfly",
         "scientificName": "Danaus plexippus",
         "funFact": "Monarch butterflies migrate up to 3,000 miles from the United States and Canada to Mexico every year.",
@@ -158,8 +142,8 @@ const mockUsersGalleryData: Record<string, GalleryResponse> = {
       },
       {
         "id": "card-8",
-        "creator": 8,
-        "owner": 3,
+        "creator": "67e1ea1fb15cf00091493969",
+        "owner": "67e1ea1fb15cf00091493968",
         "commonName": "Blue Morpho",
         "scientificName": "Morpho peleides",
         "funFact": "The brilliant blue color of the Blue Morpho's wings is not from pigment but from microscopic scales that reflect light.",
@@ -174,8 +158,8 @@ const mockUsersGalleryData: Record<string, GalleryResponse> = {
       },
       {
         "id": "card-9",
-        "creator": 9,
-        "owner": 3,
+        "creator": "67e1ea1fb15cf00091493970",
+        "owner": "67e1ea1fb15cf00091493968",
         "commonName": "Tiger Swallowtail",
         "scientificName": "Papilio glaucus",
         "funFact": "Tiger swallowtails are named for the black 'tiger stripes' on their yellow wings, and their caterpillars resemble bird droppings as a defense mechanism.",
@@ -191,29 +175,43 @@ const mockUsersGalleryData: Record<string, GalleryResponse> = {
     ]
   }
 };
+*/
 
 // Function to simulate fetching gallery data from backend (no user specified - returns default user)
 export async function fetchGalleryData(): Promise<GalleryResponse> {
-  // Simulate network delay and return default user
+  // Simulate network delay and return the first user
   return new Promise((resolve) => {
     setTimeout(() => {
-      resolve(mockUsersGalleryData["12345"]);
+      const allUsers = getAllUsers();
+      const defaultUser = allUsers[0];
+      
+      const response: GalleryResponse = {
+        _id: defaultUser._id,
+        username: defaultUser.username,
+        cards: defaultUser.cards
+      };
+      
+      resolve(response);
     }, 1000);
   });
 }
 
-// Function to fetch gallery data for a specific user ID
+// Function to simulate fetching gallery data for a specific user
 export async function fetchUserGalleryData(userId: string): Promise<GalleryResponse> {
   // Simulate network delay
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      // Check if the user exists in our mock data
-      if (mockUsersGalleryData[userId]) {
-        resolve(mockUsersGalleryData[userId]);
+      const user = getUserById(userId);
+      
+      if (user) {
+        const response: GalleryResponse = {
+          _id: user._id,
+          username: user.username,
+          cards: user.cards
+        };
+        resolve(response);
       } else {
-        // If user not found, return the default user data
-        console.warn(`User ID ${userId} not found, returning default user gallery`);
-        resolve(mockUsersGalleryData["12345"]);
+        reject(new Error(`User with ID ${userId} not found`));
       }
     }, 1000);
   });
@@ -224,22 +222,13 @@ export async function fetchCardDetails(cardId: string): Promise<Card | null> {
   // Simulate network delay
   return new Promise((resolve) => {
     setTimeout(() => {
-      // Search for the card across all users
-      for (const userId in mockUsersGalleryData) {
-        const card = mockUsersGalleryData[userId].cards.find(card => card.id === cardId);
-        if (card) {
-          resolve(card);
-          return;
-        }
-      }
-      resolve(null);
+      const card = getCardById(cardId);
+      resolve(card);
     }, 500);
   });
 }
 
 // Function to sort cards by different criteria
-export type SortOption = "name" | "date" | "rarity";
-
 export function sortCards(cards: Card[], sortBy: SortOption): Card[] {
   const sortedCards = [...cards];
   
@@ -250,9 +239,42 @@ export function sortCards(cards: Card[], sortBy: SortOption): Card[] {
       return sortedCards.sort((a, b) => new Date(b.timeCreated).getTime() - new Date(a.timeCreated).getTime());
     case "rarity":
       // Define rarity order
-      const rarityOrder = { common: 0, rare: 1, epic: 2, legendary: 3 };
+      const rarityOrder = { common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4 };
       return sortedCards.sort((a, b) => rarityOrder[b.rarity] - rarityOrder[a.rarity]);
     default:
       return sortedCards;
   }
-} 
+}
+
+// Real API Implementation (commented out for now, would replace mock functions)
+/*
+export async function fetchRealGalleryData(): Promise<GalleryResponse> {
+  try {
+    // Get the current logged in user
+    const response = await fetch('/api/users/me');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch user: ${response.statusText}`);
+    }
+    const userData = await response.json();
+    return convertUserToGalleryResponse(userData);
+  } catch (error) {
+    console.error('Error fetching gallery data:', error);
+    // Fall back to mock data if real API fails
+    return fetchGalleryData();
+  }
+}
+
+export async function fetchRealUserGalleryData(userId: string): Promise<GalleryResponse> {
+  try {
+    const response = await fetch(`/api/users/${userId}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch user: ${response.statusText}`);
+    }
+    const userData = await response.json();
+    return convertUserToGalleryResponse(userData);
+  } catch (error) {
+    console.error('Error fetching user gallery data:', error);
+    throw error;
+  }
+}
+*/ 

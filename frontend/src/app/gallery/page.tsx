@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { CardGlance } from "@/components/CardGlance";
-import { Card, SortOption, fetchGalleryData, fetchUserGalleryData, sortCards } from "@/lib/gallery";
+import { Card, SortOption } from "@/types";
+import { fetchGalleryData, fetchUserGalleryData, sortCards } from "@/lib/gallery";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import {
@@ -14,7 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { GalleryExamples } from "./examples";
 
-export default function Gallery() {
+// Create a client component that uses useSearchParams
+function GalleryContent() {
   const [cards, setCards] = useState<Card[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>("date");
   const [loading, setLoading] = useState(true);
@@ -92,11 +94,11 @@ export default function Gallery() {
         <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4 md:gap-6">
           {cards.map((card) => (
             <CardGlance
-              key={card.id}
+              key={card.id || `card-${card.commonName}`}
               name={card.commonName}
               image={card.image}
-              rarity={card.rarity}
-              cardId={card.id}
+              rarity={card.rarity === "uncommon" ? "rare" : card.rarity as "common" | "rare" | "epic" | "legendary"}
+              cardId={card.id || `card-${card.commonName.replace(/\s+/g, '-').toLowerCase()}`}
             />
           ))}
         </div>
@@ -106,5 +108,25 @@ export default function Gallery() {
         </div>
       )}
     </div>
+  );
+}
+
+// Fallback component to show while loading
+function GalleryLoading() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
+      </div>
+    </div>
+  );
+}
+
+// Main Gallery page component with Suspense boundary
+export default function Gallery() {
+  return (
+    <Suspense fallback={<GalleryLoading />}>
+      <GalleryContent />
+    </Suspense>
   );
 }

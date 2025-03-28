@@ -3,11 +3,7 @@ import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Friend, handleProfileClick } from "@/lib/social";
 
-interface FriendBarProps {
-  friend: Friend;
-}
-
-export function FriendBar({ friend }: FriendBar) {
+export function FriendBar({ friend }: { friend: Friend }) {
   return (
     <Card className="flex items-center p-4">
       <Avatar className="w-12 h-12 mr-4">
@@ -16,7 +12,11 @@ export function FriendBar({ friend }: FriendBar) {
       <CardContent className="flex-1">
         <p className="font-medium">{friend.username}</p>
       </CardContent>
-      <Button variant="outline" size="sm" onClick = {handleProfileClick.bind(this, friend._id)}>
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={() => handleProfileClick(friend._id)}
+      >
         View Profile
       </Button>
     </Card>
