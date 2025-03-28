@@ -95,14 +95,14 @@ const rareCards: Partial<Card>[] = [
 
 const epicCards: Partial<Card>[] = [
   {
-    commonName: "Monarch Butterfly",
+    commonName: "Rafflesia Arnoldii",
     scientificName: "Danaus plexippus",
-    funFact: "Monarch butterflies migrate up to 3,000 miles from the United States and Canada to Mexico every year.",
+    funFact: "Known to be the world’s largest flower, this plant is one of the rarest one in the world. Rafflesia Arnoldii, also known as the corpse plant, this name was given to this plant because of its foul odour that is similar to decaying flesh.",
     location: "Central Mexico",
     rarity: "epic",
     tradeStatus: false,
     infoLink: "https://nature-cards-eight.vercel.app/monarch-butterfly",
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Monarch_In_May.jpg/800px-Monarch_In_May.jpg",
+    image: "https://floweraura-blog-img.s3.ap-south-1.amazonaws.com/Plant+Dec+2019-+Dec+2020/rafflesia-arnoldii.jpg",
     family: "Nymphalidae",
   }
 ];
