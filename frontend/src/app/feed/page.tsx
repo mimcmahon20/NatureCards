@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { FeedCard } from "@/components/FeedCard";
 import { CardPost } from "@/types";
 import { fetchFeedData } from "@/lib/feed";
+import { FeedSkeleton } from "@/components/FeedSkeleton";
 
 export default function Feed() {
   const [posts, setPosts] = useState<CardPost[]>([]);
@@ -30,9 +31,7 @@ export default function Feed() {
       <h1 className="text-2xl font-bold mb-6">Nature Cards Feed</h1>
       
       {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
-        </div>
+        <FeedSkeleton />
       ) : posts.length > 0 ? (
         <div className="space-y-8">
           {posts.map((post) => (

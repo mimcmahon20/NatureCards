@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { GalleryExamples } from "./examples";
 import { FriendshipButton } from "@/components/FriendshipButton";
+import { GallerySkeleton } from "@/components/CardSkeleton";
 
 // Create a client component that uses useSearchParams
 function GalleryContent() {
@@ -98,9 +99,7 @@ function GalleryContent() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
-        </div>
+        <GallerySkeleton />
       ) : cards.length > 0 ? (
         <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4 md:gap-6">
           {cards.map((card) => (
@@ -126,9 +125,7 @@ function GalleryContent() {
 function GalleryLoading() {
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
-      </div>
+      <GallerySkeleton />
     </div>
   );
 }
