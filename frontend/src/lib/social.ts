@@ -237,3 +237,77 @@ export const handleDeclineTrade = async (trade_id: string): Promise<boolean> => 
         return false;
     }
 }
+
+// Simulates sending a friend request to a user by username
+export async function sendFriendRequest(username: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      // Simulate a successful request in 75% of cases
+      const success = Math.random() < 0.75;
+      
+      // In real implementation, we would make an API call to send a friend request
+      console.log(`Sending friend request to ${username}`);
+      
+      if (success) {
+        // Mock adding to our pending requests data
+        // In a real app, this would be handled by the server
+        
+        // In this mock, let's assume a random mock user is created with the given username
+        const mockUserId = `user-${Math.random().toString(36).substring(2, 9)}`;
+        
+        mockFriendRequestData[mockUserId] = {
+          "_id": mockUserId,
+          "sender_id": "12345", // Assume current user is sending
+          "recipient_id": mockUserId,
+          "username": username,
+          "profile_image": "https://source.unsplash.com/random/300x300/?person"
+        };
+      }
+      
+      resolve(success);
+    }, 1500); // Simulate network delay
+  });
+}
+
+// Add these new functions to check friendship status
+
+// Enumerates possible friendship statuses
+export type FriendshipStatus = "friend" | "pending_outgoing" | "pending_incoming" | "none";
+
+// Check the friendship status of a given user ID relative to the current user
+export async function checkFriendshipStatus(userId: string): Promise<FriendshipStatus> {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      // Check if the user is already a friend
+      const isFriend = Object.values(mockFriendData).some(friend => friend._id === userId);
+      
+      if (isFriend) {
+        resolve("friend");
+        return;
+      }
+      
+      // Check if there's a pending friend request sent by the current user
+      const isOutgoingRequest = Object.values(mockFriendRequestData).some(
+        request => request.sender_id === "12345" && request.recipient_id === userId
+      );
+      
+      if (isOutgoingRequest) {
+        resolve("pending_outgoing");
+        return;
+      }
+      
+      // Check if there's a pending friend request sent to the current user
+      const isIncomingRequest = Object.values(mockFriendRequestData).some(
+        request => request.sender_id === userId && request.recipient_id === "12345"
+      );
+      
+      if (isIncomingRequest) {
+        resolve("pending_incoming");
+        return;
+      }
+      
+      // No friendship relation exists
+      resolve("none");
+    }, 500); // Simulate network delay
+  });
+}

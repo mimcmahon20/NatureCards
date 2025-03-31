@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
+import { AddFriendModal } from "@/components/AddFriendModal";
 // import { Card, fetchCardDetails } from "@/lib/gallery";
 
 export default function Social() {
@@ -137,7 +138,7 @@ export default function Social() {
       <div className="mb-12">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-xl font-bold">Friends</h1>
-          <Button variant="success">Add Friend</Button>
+          <AddFriendModal />
         </div>
         
         {loading.friends ? (

@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { GalleryExamples } from "./examples";
+import { FriendshipButton } from "@/components/FriendshipButton";
 
 // Create a client component that uses useSearchParams
 function GalleryContent() {
@@ -64,7 +65,17 @@ function GalleryContent() {
       <GalleryExamples />
       
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-8 gap-2">
-        <h1 className="text-xl sm:text-2xl font-bold">{username}</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-bold">{username}</h1>
+          
+          {/* Show friendship button only if viewing another user's gallery */}
+          {userId && userId !== "12345" && (
+            <div className="mt-2 sm:mt-0 sm:ml-4">
+              <FriendshipButton userId={userId} username={username} />
+            </div>
+          )}
+        </div>
+        
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="flex items-center gap-2 text-sm sm:text-base w-fit">
