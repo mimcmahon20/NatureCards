@@ -12,8 +12,8 @@ const mongoose = require("mongoose");
 const NatureCardsSchema = new mongoose.Schema(
   {
     username: String,
-    password: String,
     email: String,
+    profile_picture: String,
     cards: {
       type: Array,
       items: {
@@ -30,6 +30,16 @@ const NatureCardsSchema = new mongoose.Schema(
           trade_status: Boolean,
           info_link: String,
           image: String,
+        },
+      },
+    },
+    pending_friends: {
+      type: Array,
+      items: {
+        type: Object,
+        properties: {
+          sender: mongoose.Schema.Types.ObjectId,
+          receiver: mongoose.Schema.Types.ObjectId,
         },
       },
     },
