@@ -83,7 +83,7 @@ export function AddFriendModal({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant={buttonVariant as any}>{buttonText}</Button>
+        <Button variant={buttonVariant}>{buttonText}</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <div className="text-center sm:text-left">
@@ -91,7 +91,7 @@ export function AddFriendModal({
             Add a Friend
           </h3>
           <p className="text-sm text-gray-500 mb-6">
-            Enter the username of the person you'd like to add as a friend.
+            Enter the username of the person you&apos;d like to add as a friend.
           </p>
         </div>
         

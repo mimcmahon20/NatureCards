@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Friend, FriendRequest, handleProfileClick, handleAcceptFriend, handleDeclineFriend } from "@/lib/social";
+import { FriendRequest, handleProfileClick, handleAcceptFriend, handleDeclineFriend } from "@/lib/social";
 
 interface FriendRequestBarProps {
   friend_request: FriendRequest;

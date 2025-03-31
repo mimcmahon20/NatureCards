@@ -1,10 +1,8 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { TradeRequest, fetchMockTradeRequestData } from "@/lib/social";
+import { TradeRequest } from "@/lib/social";
 import { fetchCardDetails } from "@/lib/gallery";
-import { Card as CardType } from "@/types";
 import { useState, useEffect } from "react";
 import { TradeRequestGlance } from "./TradeRequestGlance";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,7 +18,7 @@ export function TradeRequestBar({ trade_request, onTradeComplete }: TradeRequest
   const [senderCardImage, setSenderCardImage] = useState<string>("/placeholder.svg");
   const [recipientCardImage, setRecipientCardImage] = useState<string>("/placeholder.svg");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [errorState, setErrorState] = useState(false);
   
   // Extract colors for rarity visualization
   const getSenderRarityColors = () => {
@@ -69,13 +67,14 @@ export function TradeRequestBar({ trade_request, onTradeComplete }: TradeRequest
         console.error("Error loading card details:", err);
         setSenderCardName("Unknown Card");
         setRecipientCardName("Unknown Card");
-        setError(true);
+        setErrorState(true);
         setLoading(false);
+        console.log(errorState)
       }
     };
     
     loadCardDetails();
-  }, [trade_request.sender_card_id, trade_request.recipient_card_id]);
+  }, [trade_request.sender_card_id, trade_request.recipient_card_id, errorState]);
 
   // Handle when a trade is completed (accepted or declined)
   const handleTradeComplete = (tradeId: string, status: 'accepted' | 'declined') => {

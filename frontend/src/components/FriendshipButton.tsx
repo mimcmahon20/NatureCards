@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { AddFriendModal } from "@/components/AddFriendModal";
 import { checkFriendshipStatus, FriendshipStatus, handleAcceptFriend, handleDeclineFriend } from "@/lib/social";
 import { useToast } from "@/components/ui/toast";
-import { Loader2, Check, X, UserPlus, UserCheck, Clock, User } from "lucide-react";
+import { Loader2, Check, X, UserCheck, Clock } from "lucide-react";
 
 interface FriendshipButtonProps {
   userId: string;

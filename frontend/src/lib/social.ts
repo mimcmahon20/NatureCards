@@ -1,4 +1,3 @@
-import { fetchCardDetails } from "@/lib/gallery";
 import { GalleryResponse } from "@/types";
 
 // Types for friend data. User id is used to fetch most other data

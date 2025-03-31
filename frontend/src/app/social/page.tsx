@@ -5,9 +5,7 @@ import { fetchMockFriendData, fetchMockFriendRequestData, fetchMockTradeRequestD
 import { FriendBar } from "@/components/FriendBar";
 import { FriendRequestBar } from "@/components/FriendRequestBar";
 import { TradeRequestBar } from "@/components/TradeRequestBar";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { AddFriendModal } from "@/components/AddFriendModal";
 // import { Card, fetchCardDetails } from "@/lib/gallery";
