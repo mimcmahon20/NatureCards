@@ -1,5 +1,5 @@
-import { Card } from "@/lib/gallery";
-import { fetchCardDetails, GalleryResponse } from "@/lib/gallery";
+import { fetchCardDetails } from "@/lib/gallery";
+import { GalleryResponse } from "@/types";
 
 // Types for friend data. User id is used to fetch most other data
 export interface Friend {
@@ -182,20 +182,27 @@ export const handleDeclineFriend = (friend_id: string) => {
 }
 
 //Handled when trade recipient accepts trade request, exchanging card data between sender and recipient
-export const handleAcceptTrade = async (trade_request: TradeRequest) => {
-    const recipient_gallery = await getUserGallery(trade_request.recipient_id);
-    console.log("Accept trade request logic here");
-
-    //Exchange recipient/sender card arrays
-    delete (recipient_gallery.cards as Record<string, any>)[trade_request.recipient_card_id];
-
-    //TODO: send card data to other user. For now it just banishes this card to the void.
-    //Backend connection required for that.
-
-    //Remove trade request from both users
-    delete mockTradeRequestData[trade_request._id];
-
-    //TODO: remove trade request from other user. Backend connection required.
+export const handleAcceptTrade = async (trade_request: TradeRequest): Promise<boolean> => {
+    console.log("Accepting trade request:", trade_request);
+    
+    try {
+        // In a real implementation, this would make an API call to accept the trade
+        // For mock purposes, we'll simulate a successful trade
+        
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Remove the trade request from our mock data
+        if (mockTradeRequestData[trade_request._id]) {
+            delete mockTradeRequestData[trade_request._id];
+        }
+        
+        console.log("Trade accepted successfully");
+        return true;
+    } catch (error) {
+        console.error("Error accepting trade:", error);
+        return false;
+    }
 }
 
 //Get this user's gallery data. Used for exchanging card data in trades.
@@ -207,10 +214,26 @@ export async function getUserGallery(user_id: string): Promise<GalleryResponse> 
     return response.json();
 }
 
-
 //Handled when trade recipient declines trade request. This will remove the trade request from both users.
-export const handleDeclineTrade = (trade_id: string) => {
-    console.log("Decline trade request logic here");
-
-    //Remove trade request from both users
+export const handleDeclineTrade = async (trade_id: string): Promise<boolean> => {
+    console.log("Declining trade request:", trade_id);
+    
+    try {
+        // In a real implementation, this would make an API call to decline the trade
+        // For mock purposes, we'll simulate a successful decline
+        
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Remove the trade request from our mock data
+        if (mockTradeRequestData[trade_id]) {
+            delete mockTradeRequestData[trade_id];
+        }
+        
+        console.log("Trade declined successfully");
+        return true;
+    } catch (error) {
+        console.error("Error declining trade:", error);
+        return false;
+    }
 }
