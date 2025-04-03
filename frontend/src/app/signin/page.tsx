@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,7 +29,7 @@ export default function SignIn() {
             </CardHeader>
             <CardContent className="space-y-4">
               <Button
-                onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+                onClick={() => signIn("google", { callbackUrl: "/" })}
                 className="w-full bg-green-700 text-white hover:bg-green-600"
               >
                 Sign In with Google
@@ -67,7 +67,7 @@ export default function SignIn() {
             </CardHeader>
             <CardContent className="space-y-4">
               <Button
-                onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+                onClick={() => signIn("google", { callbackUrl: "/" })}
                 className="w-full bg-green-700 text-white hover:bg-green-600"
               >
                 Sign up with Google
