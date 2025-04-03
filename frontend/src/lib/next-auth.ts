@@ -17,9 +17,11 @@ declare module "next-auth" {
     username: string
     email: string
     profile_picture?: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     cards: Array<any>  
     pending_friends: Array<string>  
     friends: Array<string>  
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     trading: Array<any>  
   }
 }

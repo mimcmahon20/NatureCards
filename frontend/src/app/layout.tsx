@@ -5,8 +5,6 @@ import { ToastProvider } from "@/providers/toast-provider";
 import { AuthProvider } from "@/providers/session-provider";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/next-auth";
-import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 
 export const metadata: Metadata = {
   title: "NatureCards",
