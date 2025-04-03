@@ -10,7 +10,7 @@ import { identifyPlant } from "@/lib/plant-id";
 import { convertToJpegBase64 } from "@/lib/image-utils";
 import { CardDetailed } from "@/components/CardDetailed";
 import Image from "next/image";
-
+import { UploadButton } from "@/lib/utils";
 // Temporary type for friends
 type Friend = {
   id: string;
@@ -79,72 +79,100 @@ export default function Home() {
     }
   };
 
+  // Add a new function to fetch an image as a Blob from a URL
+  const fetchImageAsBlob = async (url: string): Promise<Blob> => {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+    }
+    return await response.blob();
+  };
+
+  // Modified function to handle images from URL
+  const handleImageFromUrl = async (imageUrl: string) => {
+    setErrorMessage(null);
+    
+    try {
+      // Show preview and start identification
+      setCapturedImage(imageUrl);
+      setIsIdentifying(true);
+      
+      // Fetch the image from URL and convert to blob
+      const imageBlob = await fetchImageAsBlob(imageUrl);
+      
+      // Convert blob to File object
+      const imageFile = new File([imageBlob], "uploaded-image.jpg", { type: "image/jpeg" });
+      
+      // Convert to base64 using existing utility
+      const base64Image = await convertToJpegBase64(imageFile);
+      
+      // Call the Plant.id API using existing function
+      const plantIdResponse = await identifyPlant(base64Image);
+      
+      // Process results using existing logic
+      const topResult = plantIdResponse.result.classification.suggestions[0];
+      
+      if (!topResult) {
+        throw new Error("No plant identification results found");
+      }
+      
+      // Determine rarity based on confidence
+      const rarity = determineRarity(topResult.probability);
+      
+      // Extract the first sentence from description for fun fact
+      const getFirstSentence = (text: string | undefined): string => {
+        if (!text) return "This plant was identified using AI technology!";
+        
+        // Match for a sentence ending with period, question mark, or exclamation point
+        const sentenceMatch = text.match(/^.*?[.!?](?:\s|$)/);
+        return sentenceMatch ? sentenceMatch[0].trim() : text.substring(0, 100) + "...";
+      };
+      
+      // Create plant details object for CardDetailed
+      const plantDetails = {
+        id: topResult.id,
+        name: topResult.name,
+        image: imageUrl,
+        rating: getRatingFromRarity(rarity),
+        rarity: rarity === "uncommon" ? "rare" : rarity as "common" | "rare" | "epic" | "legendary",
+        commonName: topResult.name,
+        scientificName: topResult.details?.taxonomy?.genus 
+          ? `${topResult.details.taxonomy.genus} sp.`
+          : topResult.name,
+        family: topResult.details?.taxonomy?.family || "Unknown",
+        funFact: getFirstSentence(topResult.details?.description?.value) || 
+          "This plant was identified using AI technology! No additional information is available.",
+        timePosted: new Date().toLocaleDateString(),
+        location: "Your location",
+        username: "You"
+      };
+      
+      // Set the identified plant
+      setIdentifiedPlant(plantDetails);
+      
+      // Open the drawer to show results
+      setShowIdentificationDrawer(true);
+    } catch (error) {
+      console.error("Error during plant identification:", error);
+      setErrorMessage("Failed to identify plant. Please try again.");
+    } finally {
+      setIsIdentifying(false);
+    }
+  };
+
+  // Keep the original handleImageCapture for backward compatibility if needed
   const handleImageCapture = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    setErrorMessage(null);
     
     if (file) {
       try {
         // Create URL for preview
         const imageUrl = URL.createObjectURL(file);
-        setCapturedImage(imageUrl);
-        
-        // Start plant identification
-        setIsIdentifying(true);
-        
-        // Convert image to base64
-        const base64Image = await convertToJpegBase64(file);
-        
-        // Call the Plant.id API
-        const plantIdResponse = await identifyPlant(base64Image);
-        
-        // Get the top suggestion
-        const topResult = plantIdResponse.result.classification.suggestions[0];
-        
-        if (!topResult) {
-          throw new Error("No plant identification results found");
-        }
-        
-        // Determine rarity based on confidence
-        const rarity = determineRarity(topResult.probability);
-        
-        // Extract the first sentence from description for fun fact
-        const getFirstSentence = (text: string | undefined): string => {
-          if (!text) return "This plant was identified using AI technology!";
-          
-          // Match for a sentence ending with period, question mark, or exclamation point
-          const sentenceMatch = text.match(/^.*?[.!?](?:\s|$)/);
-          return sentenceMatch ? sentenceMatch[0].trim() : text.substring(0, 100) + "...";
-        };
-        
-        // Create plant details object for CardDetailed
-        const plantDetails = {
-          id: topResult.id,
-          name: topResult.name,
-          image: imageUrl,
-          rating: getRatingFromRarity(rarity),
-          rarity: rarity === "uncommon" ? "rare" : rarity as "common" | "rare" | "epic" | "legendary",
-          commonName: topResult.name,
-          scientificName: topResult.details?.taxonomy?.genus 
-            ? `${topResult.details.taxonomy.genus} sp.`
-            : topResult.name,
-          family: topResult.details?.taxonomy?.family || "Unknown",
-          funFact: getFirstSentence(topResult.details?.description?.value) || 
-            "This plant was identified using AI technology! No additional information is available.",
-          timePosted: new Date().toLocaleDateString(),
-          location: "Your location",
-          username: "You"
-        };
-        
-        // Set the identified plant
-        setIdentifiedPlant(plantDetails);
-        
-        // Open the drawer to show results
-        setShowIdentificationDrawer(true);
+        // Use the new function with the image URL
+        await handleImageFromUrl(imageUrl);
       } catch (error) {
-        console.error("Error during plant identification:", error);
-        setErrorMessage("Failed to identify plant. Please try again.");
-      } finally {
+        console.error("Error handling captured image:", error);
+        setErrorMessage("Failed to process image. Please try again.");
         setIsIdentifying(false);
       }
     }
@@ -296,24 +324,60 @@ export default function Home() {
       </div>
 
       <div className="flex items-center justify-center gap-3 sm:gap-6">
-        <label htmlFor="uploadInput">
-          <Card className="w-36 sm:w-48 h-36 sm:h-48 flex flex-col items-center justify-center gap-2 sm:gap-4 hover:bg-slate-100 transition-colors cursor-pointer">
-            <Upload className="w-8 h-8 sm:w-12 sm:h-12" />
-            <h2 className="text-sm sm:text-xl font-semibold text-center">
-              Upload Picture
-            </h2>
-          </Card>
-        </label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleImageCapture}
-          className="hidden"
-          id="uploadInput"
-        />
+        <div className="w-36 sm:w-48 h-36 sm:h-48 cursor-pointer">
+          <UploadButton
+            endpoint="plantImageUploader"
+            onClientUploadComplete={(res) => {
+              if (res && res.length > 0) {
+                // Get the URL of the uploaded file
+                const uploadedFileUrl = res[0].url;
+                
+                if (uploadedFileUrl) {
+                  // Process the uploaded image with our identification logic
+                  handleImageFromUrl(uploadedFileUrl);
+                } else {
+                  setErrorMessage("Upload completed but no file URL was returned.");
+                }
+              }
+            }}
+            onUploadError={(error: Error) => {
+              console.error("Upload error:", error);
+              setErrorMessage(`Upload failed: ${error.message}`);
+            }}
+            appearance={{
+              container: "w-full h-full",
+              button: "w-full h-full p-0 m-0 bg-transparent hover:bg-transparent border-none shadow-none focus:ring-0 focus:ring-offset-0"
+            }}
+            content={{
+              button({ ready }) {
+                if (ready) return (
+                  <div className="w-36 sm:w-48 h-36 sm:h-48 cursor-pointer">
+                  <Card className="w-full h-full flex flex-col items-center justify-center gap-2 sm:gap-4 hover:bg-slate-100 transition-colors p-4">
+                    <Upload className="w-8 h-8 sm:w-12 sm:h-12" />
+                    <h2 className="text-sm sm:text-xl font-semibold text-center">
+                      Upload Picture
+                    </h2>
+                  </Card>
+                  </div>
+                );
+                return (
+                  <Card className="w-full h-full flex flex-col items-center justify-center gap-2 sm:gap-4 hover:bg-slate-100 transition-colors p-4">
+                    <Loader2 className="w-8 h-8 sm:w-12 sm:h-12 animate-spin" />
+                    <h2 className="text-sm sm:text-xl font-semibold text-center">
+                      Loading...
+                    </h2>
+                  </Card>
+                );
+              },
+              allowedContent() {
+                return null;
+              }
+            }}
+          />
+        </div>
 
-        <label htmlFor="cameraInput">
-          <Card className="w-36 sm:w-48 h-36 sm:h-48 flex flex-col items-center justify-center gap-2 sm:gap-4 hover:bg-slate-100 transition-colors cursor-pointer">
+        <label htmlFor="cameraInput" className="w-36 sm:w-48 h-36 sm:h-48 cursor-pointer">
+          <Card className="w-full h-full flex flex-col items-center justify-center gap-2 sm:gap-4 hover:bg-slate-100 transition-colors p-4">
             <Camera className="w-8 h-8 sm:w-12 sm:h-12" />
             <h2 className="text-sm sm:text-xl font-semibold text-center">
               Take Picture

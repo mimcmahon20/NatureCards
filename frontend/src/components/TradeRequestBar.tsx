@@ -2,10 +2,10 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { TradeRequest } from "@/lib/social";
-import { fetchCardDetails } from "@/lib/gallery";
 import { useState, useEffect } from "react";
 import { TradeRequestGlance } from "./TradeRequestGlance";
 import { Skeleton } from "@/components/ui/skeleton";
+import { mockFetchCardDetails } from "@/lib/mock-trade-data"; // Import mock data
 
 interface TradeRequestBarProps {
   trade_request: TradeRequest;
@@ -17,47 +17,59 @@ export function TradeRequestBar({ trade_request, onTradeComplete }: TradeRequest
   const [recipientCardName, setRecipientCardName] = useState<string>("Loading...");
   const [senderCardImage, setSenderCardImage] = useState<string>("/placeholder.svg");
   const [recipientCardImage, setRecipientCardImage] = useState<string>("/placeholder.svg");
+  const [senderCardRarity, setSenderCardRarity] = useState<"common" | "rare" | "epic" | "legendary">("common");
+  const [recipientCardRarity, setRecipientCardRarity] = useState<"common" | "rare" | "epic" | "legendary">("common");
   const [loading, setLoading] = useState(true);
   const [errorState, setErrorState] = useState(false);
   
-  // Extract colors for rarity visualization
-  const getSenderRarityColors = () => {
-    return {
-      primaryColor: "#4F46E5", 
-      secondaryColor: "#818CF8",
-      rarityLevel: 3
-    };
-  };
+  // Convert database rarity to our component rarity type
+  const convertRarity = (dbRarity: string): "common" | "rare" | "epic" | "legendary" => {
+    switch(dbRarity) {
+      case "legendary": return "legendary";
+      case "epic": return "epic";
+      case "rare": return "rare";
+      case "uncommon": return "rare"; // Map uncommon to rare for UI purposes
+      case "common":
+      default: return "common";
+    }
+  }
   
-  const getRecipientRarityColors = () => {
-    return {
-      primaryColor: "#059669",
-      secondaryColor: "#34D399",
-      rarityLevel: 4
-    };
+  // Get star count for rarity visualization
+  const getRarityStars = (rarity: "common" | "rare" | "epic" | "legendary"): number => {
+    switch (rarity) {
+      case "legendary": return 4;
+      case "epic": return 3;
+      case "rare": return 2;
+      case "common":
+      default: return 1;
+    }
   };
   
   useEffect(() => {
     const loadCardDetails = async () => {
       try {
-        // Load sender card details
-        const senderCard = await fetchCardDetails(trade_request.sender_card_id);
+        // Use mock data for testing
+        const senderCard = await mockFetchCardDetails(trade_request.sender_card_id);
         if (senderCard) {
           setSenderCardName(senderCard.commonName);
           if (senderCard.image) {
             setSenderCardImage(senderCard.image);
           }
+          // Set card rarity, converting from DB format to our component format
+          setSenderCardRarity(convertRarity(senderCard.rarity));
         } else {
           setSenderCardName("Unknown Card");
         }
         
         // Load recipient card details
-        const recipientCard = await fetchCardDetails(trade_request.recipient_card_id);
+        const recipientCard = await mockFetchCardDetails(trade_request.recipient_card_id);
         if (recipientCard) {
           setRecipientCardName(recipientCard.commonName);
           if (recipientCard.image) {
             setRecipientCardImage(recipientCard.image);
           }
+          // Set card rarity, converting from DB format to our component format
+          setRecipientCardRarity(convertRarity(recipientCard.rarity));
         } else {
           setRecipientCardName("Unknown Card");
         }
@@ -125,14 +137,14 @@ export function TradeRequestBar({ trade_request, onTradeComplete }: TradeRequest
             
             s_name={senderCardName}
             s_image={senderCardImage}
-            s_rating={getSenderRarityColors().rarityLevel}
-            s_rarity="rare"
+            s_rating={getRarityStars(senderCardRarity)}
+            s_rarity={senderCardRarity}
             s_cardId={trade_request.sender_card_id}
             
             r_name={recipientCardName}
             r_image={recipientCardImage}
-            r_rating={getRecipientRarityColors().rarityLevel}
-            r_rarity="epic"
+            r_rating={getRarityStars(recipientCardRarity)}
+            r_rarity={recipientCardRarity}
             r_cardId={trade_request.recipient_card_id}
             
             onTradeComplete={handleTradeComplete}
