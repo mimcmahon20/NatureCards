@@ -33,9 +33,9 @@ const NavElement = ({ href, icon, label }: NavElementProps) => {
 };
 
 export function Navigation({ userId }: { userId: string }) {
-  
+  const userIdInLocalStorage = localStorage.getItem('userId');
   useEffect(() => {
-    if (userId) {
+    if (userId && !userIdInLocalStorage) {
       localStorage.setItem('userId', userId);
     }
   }, [userId]);
