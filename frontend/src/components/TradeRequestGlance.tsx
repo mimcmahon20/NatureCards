@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Star, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Star, CheckCircle, XCircle, Loader2, ArrowLeft, ArrowRight } from "lucide-react";
 import { Card as CardType } from "@/types";
 import { handleAcceptTrade, handleDeclineTrade, TradeRequest } from "@/lib/social";
 import { Button } from "@/components/ui/button";
@@ -150,7 +150,7 @@ export function TradeRequestGlance({
     side: 'sender' | 'recipient'
   ) => (
     <div 
-      className={`rounded-lg border-2 ${colors.border} overflow-hidden cursor-pointer hover:shadow-md transition-shadow shadow-lg w-full max-w-[180px]`}
+      className={`rounded-lg border-2 ${colors.border} overflow-hidden cursor-pointer hover:shadow-md transition-shadow shadow-lg w-[120px] sm:w-[160px]`}
       onClick={() => setActiveCardView(side)}
     >
       <div className={`p-1 sm:p-2 ${colors.border} ${colors.header}`}>
@@ -325,9 +325,9 @@ export function TradeRequestGlance({
           View Trade
         </Button>
       </DrawerTrigger>
-      <DrawerContent className="px-4 pb-6">
-        <div className="mt-6 flex flex-col">
-          <h3 className="text-lg font-semibold mb-4 text-center">Trade Details</h3>
+      <DrawerContent className="px-2 sm:px-4 pb-6">
+        <div className="mt-4 sm:mt-6 flex flex-col">
+          <h3 className="text-lg font-semibold mb-2 sm:mb-4 text-center">Trade Details</h3>
           
           {isLoading ? (
             <div className="flex justify-center my-10">
@@ -335,27 +335,32 @@ export function TradeRequestGlance({
             </div>
           ) : (
             <>
-              <p className="text-sm text-gray-500 mb-4 text-center">
-                {isCurrentUserSender 
-                  ? `You offered this trade to ${recipientUsername}`
-                  : `${senderUsername} offered this trade to you`}
-              </p>
-              
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="flex flex-col">
-                  <p className="text-center text-sm font-medium mb-2">
+              <div className="grid grid-cols-[1fr,auto,1fr] items-center gap-1 sm:gap-4 mb-4 w-full place-items-center">
+                <div className="flex flex-col items-center w-full">
+                  <p className="text-xs sm:text-sm font-medium mb-1 sm:mb-2 truncate max-w-[120px] sm:max-w-[160px] text-center">
                     {isCurrentUserSender ? "Your Card" : `${senderUsername}'s Card`}
                   </p>
                   {renderCardPreview(s_name, s_image, getColors(s_rarity), 'sender')}
                 </div>
                 
-                <div className="flex flex-col">
-                  <p className="text-center text-sm font-medium mb-2">
+                <div className="flex flex-col gap-1 text-gray-400 px-1">
+                  <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+                </div>
+
+                <div className="flex flex-col items-center w-full">
+                  <p className="text-xs sm:text-sm font-medium mb-1 sm:mb-2 truncate max-w-[120px] sm:max-w-[160px] text-center">
                     {isCurrentUserSender ? `${recipientUsername}'s Card` : "Your Card"}
                   </p>
                   {renderCardPreview(r_name, r_image, getColors(r_rarity), 'recipient')}
                 </div>
               </div>
+
+              <p className="text-sm text-gray-500 mb-4 text-center">
+                {isCurrentUserSender 
+                  ? `You offered this trade to ${recipientUsername}`
+                  : `${senderUsername} offered this trade to you`}
+              </p>
               
               {/* Actions only show if user is recipient and trade is still pending */}
               {!isCurrentUserSender && tradeStatus === 'pending' && (
