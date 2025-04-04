@@ -1,8 +1,6 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
-import { fetchFriendGalleryURL } from "@/lib/social"
-
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
@@ -19,6 +17,7 @@ const buttonVariants = cva(
         secondary:
           "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
+        disabled: "bg-primary/90 text-primary-foreground shadow cursor-default",
         link: "text-primary underline-offset-4 hover:underline",
         success:
           "bg-green-600 text-white shadow-sm hover:bg-green-500",
@@ -36,12 +35,6 @@ const buttonVariants = cva(
     },
   }
 )
-
-//Social "view profile" button click
-export const handleProfileClick = (friend_id: string) => {
-  console.log(fetchFriendGalleryURL(friend_id));
-  window.location.href = '/gallery?userid=' + friend_id;
-}
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,

@@ -19,9 +19,14 @@ interface PlantDetails {
 }
 
 export function CardDetailed({ plant }: { plant: PlantDetails }) {
+  // Check for required props and provide fallbacks
+  const safeImage = plant.image || '/placeholder.svg';
+  const safeName = plant.name || plant.commonName || 'Unknown Plant';
+  const safeRarity = plant.rarity || 'common';
+  
   // Get border color based on rarity
   const getBorderColor = () => {
-    switch (plant.rarity) {
+    switch (safeRarity) {
       case "common":
         return "border-[#1a4e8c]" // Blue border
       case "rare":
@@ -37,7 +42,7 @@ export function CardDetailed({ plant }: { plant: PlantDetails }) {
 
   // Get background color for the rarity badge
   const getRarityBgColor = () => {
-    switch (plant.rarity) {
+    switch (safeRarity) {
       case "common":
         return "bg-[#d8e6f3] text-[#1a4e8c]" // Light blue
       case "rare":
@@ -53,7 +58,7 @@ export function CardDetailed({ plant }: { plant: PlantDetails }) {
   
   // Get star color based on rarity
   const getStarColor = () => {
-    switch (plant.rarity) {
+    switch (safeRarity) {
       case "common":
         return "text-[#1a4e8c]" // Blue stars
       case "rare":
@@ -69,7 +74,7 @@ export function CardDetailed({ plant }: { plant: PlantDetails }) {
 
   // Get content background color based on rarity
   const getContentBgColor = () => {
-    switch (plant.rarity) {
+    switch (safeRarity) {
       case "common":
         return "bg-[#f1f5fb]" // Very light blue
       case "rare":
@@ -93,8 +98,8 @@ export function CardDetailed({ plant }: { plant: PlantDetails }) {
       {/* Plant Image */}
       <div className="relative aspect-square w-full">
         <Image 
-          src={plant.image || "/placeholder.svg"} 
-          alt={plant.name} 
+          src={safeImage}
+          alt={safeName} 
           fill 
           className="object-cover"
           priority
@@ -104,9 +109,9 @@ export function CardDetailed({ plant }: { plant: PlantDetails }) {
       {/* Plant Information */}
       <div className={`${getContentBgColor()} p-4`}>
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xl font-bold text-[#1a365d]">{plant.name}</h2>
+          <h2 className="text-xl font-bold text-[#1a365d]">{safeName}</h2>
           <div className={`px-3 py-1 rounded-full ${getRarityBgColor()} text-sm font-medium`}>
-            {capitalizeRarity(plant.rarity)}
+            {capitalizeRarity(safeRarity)}
           </div>
         </div>
         
@@ -122,16 +127,16 @@ export function CardDetailed({ plant }: { plant: PlantDetails }) {
 
         <div className="space-y-2 text-[#2d3748] mb-4">
           <p>
-            <span className="font-semibold">Common:</span> {plant.commonName}
+            <span className="font-semibold">Common:</span> {plant.commonName || safeName}
           </p>
           <p>
-            <span className="font-semibold">Scientific:</span> <em>{plant.scientificName}</em>
+            <span className="font-semibold">Scientific:</span> <em>{plant.scientificName || 'Unknown'}</em>
           </p>
           <p>
-            <span className="font-semibold">Family:</span> {plant.family}
+            <span className="font-semibold">Family:</span> {plant.family || 'Unknown'}
           </p>
           <p className="break-words">
-            <span className="font-semibold">Fun Fact:</span> {plant.funFact}
+            <span className="font-semibold">Fun Fact:</span> {plant.funFact || 'No additional information available.'}
           </p>
         </div>
 
@@ -139,17 +144,17 @@ export function CardDetailed({ plant }: { plant: PlantDetails }) {
         <div className="flex flex-col space-y-2 mt-4 border-t pt-4 border-gray-200">
           <div className="flex items-center gap-2 text-gray-600">
             <Calendar className="w-4 h-4 flex-shrink-0" />
-            <span>{plant.timePosted}</span>
+            <span>{plant.timePosted || 'Unknown'}</span>
           </div>
 
           <div className="flex items-center gap-2 text-gray-600">
             <MapPin className="w-4 h-4 flex-shrink-0" />
-            <span>{plant.location}</span>
+            <span>{plant.location || 'Unknown location'}</span>
           </div>
 
           <div className="flex items-center gap-2 text-gray-600">
             <User className="w-4 h-4 flex-shrink-0" />
-            <span>{plant.username}</span>
+            <span>{plant.username || 'Unknown user'}</span>
           </div>
         </div>
       </div>

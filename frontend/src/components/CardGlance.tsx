@@ -4,7 +4,6 @@ import { useState } from "react";
 import Image from "next/image";
 import { Star } from "lucide-react";
 import { Card } from "@/types";
-import { fetchCardDetails } from "@/lib/gallery";
 import { CardDetailed } from "./CardDetailed";
 import {
   Drawer,
@@ -13,39 +12,29 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 
-interface CardGlanceProps {
-  name: string;
-  image: string;
-  rarity: "common" | "rare" | "epic" | "legendary";
-  cardId: string; // Added to identify the card
+// Interface for MongoDB documents that may include _id
+interface MongoDBDocument {
+  _id?: string;
 }
 
-export function CardGlance({
-  name,
-  image,
-  rarity,
-  cardId,
-}: CardGlanceProps) {
-  const [cardDetails, setCardDetails] = useState<Card | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+interface CardGlanceProps {
+  card: Card & MongoDBDocument; // Accept the full card object with possible MongoDB fields
+}
 
-  const handleOpenDrawer = async () => {
-    if (!cardDetails) {
-      setIsLoading(true);
-      try {
-        const details = await fetchCardDetails(cardId);
-        setCardDetails(details);
-      } catch (error) {
-        console.error("Failed to fetch card details:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
+export function CardGlance({ card }: CardGlanceProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Extract the properties we need from the card
+  const name = card.commonName;
+  const image = card.image;
+  
+  // Convert uncommon to rare for display purposes if needed
+  const displayRarity = card.rarity === "uncommon" ? "rare" : 
+                      (card.rarity as "common" | "rare" | "epic" | "legendary");
 
   // Determine colors based on rarity
   const getColors = () => {
-    switch (rarity) {
+    switch (displayRarity) {
       case "common":
         return {
           border: "border-[#1a4e8c]", // Blue border
@@ -92,7 +81,7 @@ export function CardGlance({
   const colors = getColors();
 
   return (
-    <Drawer onOpenChange={(open) => open && handleOpenDrawer()}>
+    <Drawer open={isOpen} onOpenChange={setIsOpen}>
       <DrawerTrigger asChild>
         <div
           className={`rounded-lg border-2 ${colors.border} overflow-hidden w-full max-w-full cursor-pointer hover:shadow-md transition-shadow shadow-xl`}
@@ -125,56 +114,43 @@ export function CardGlance({
         </div>
       </DrawerTrigger>
       <DrawerContent className="min-h-[50vh] max-h-[90vh]">
-        
         <div className="overflow-y-auto px-4 pb-8 h-full">
-          {isLoading ? (
-            <div className="flex justify-center items-center py-8">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-700"></div>
-            </div>
-          ) : cardDetails ? (
-            <div className="relative max-w-lg mx-auto pt-10">
-              <DrawerClose className="absolute top-0 right-0 p-2 rounded-full bg-gray-100 hover:bg-gray-200 z-10">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="lucide lucide-x"
-                >
-                  <path d="M18 6 6 18" />
-                  <path d="m6 6 12 12" />
-                </svg>
-                <span className="sr-only">Close</span>
-              </DrawerClose>
-              <CardDetailed
-                plant={{
-                  id: cardDetails.id || cardId,
-                  name: cardDetails.commonName,
-                  image: cardDetails.image,
-                  rating: colors.rarityLevel,
-                  rarity: (cardDetails.rarity === "uncommon" ? "rare" : cardDetails.rarity) as "common" | "rare" | "epic" | "legendary",
-                  commonName: cardDetails.commonName,
-                  scientificName: cardDetails.scientificName,
-                  family: cardDetails.family || "",
-                  funFact: cardDetails.funFact,
-                  timePosted: new Date(
-                    cardDetails.timeCreated
-                  ).toLocaleDateString(),
-                  location: cardDetails.location,
-                  username: cardDetails.username || "Unknown",
-                }}
-              />
-            </div>
-          ) : (
-            <div className="p-4 text-center text-gray-500">
-              Failed to load card details. Please try again.
-            </div>
-          )}
+          <div className="relative max-w-lg mx-auto pt-10">
+            <DrawerClose className="absolute top-0 right-0 p-2 rounded-full bg-gray-100 hover:bg-gray-200 z-10">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="lucide lucide-x"
+              >
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+              </svg>
+              <span className="sr-only">Close</span>
+            </DrawerClose>
+            <CardDetailed
+              plant={{
+                id: card.id || card._id || `card-${name.replace(/\s+/g, '-').toLowerCase()}`,
+                name: card.commonName,
+                image: card.image,
+                rating: colors.rarityLevel,
+                rarity: displayRarity,
+                commonName: card.commonName,
+                scientificName: card.scientificName,
+                family: card.family || "",
+                funFact: card.funFact,
+                timePosted: new Date(card.timeCreated).toLocaleDateString(),
+                location: card.location,
+                username: card.username || "You"
+              }}
+            />
+          </div>
         </div>
       </DrawerContent>
     </Drawer>
