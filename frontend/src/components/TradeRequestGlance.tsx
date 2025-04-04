@@ -7,7 +7,6 @@ import { handleAcceptTrade, handleDeclineTrade, TradeRequest } from "@/lib/socia
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerClose, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { useToast } from '@/components/ui/toast';
-import { mockFetchCardDetails } from "@/lib/mock-trade-data";
 
 // Card interface matching CardDetailed structure
 interface CardData {
@@ -49,7 +48,7 @@ export function TradeRequestGlance({ tradeRequest, onTradeComplete, isDisabled }
   const [tradeActionLoading, setTradeActionLoading] = useState(false);
   const [tradeStatus, setTradeStatus] = useState<'pending' | 'accepted' | 'declined'>('pending');
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [activeCardView, setActiveCardView] = useState<'sender' | 'recipient' | null>(null);
+  // const [activeCardView, setActiveCardView] = useState<'sender' | 'recipient' | null>(null);
   const toast = useToast();
 
   // Check if current user is the sender (using placeholder "12345" as user ID)
@@ -113,7 +112,7 @@ export function TradeRequestGlance({ tradeRequest, onTradeComplete, isDisabled }
         </p>
         <div 
           className={`rounded-lg border-2 ${colors.border} overflow-hidden cursor-pointer hover:shadow-md transition-shadow shadow-lg w-[120px] sm:w-[160px]`}
-          onClick={() => setActiveCardView(side)}
+          // onClick={() => setActiveCardView(side)}
         >
           <div className={`p-1 sm:p-2 ${colors.border} ${colors.header}`}>
             <h3 className="text-sm font-semibold truncate">{cardData.commonName}</h3>

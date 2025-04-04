@@ -17,7 +17,7 @@ export const ourFileRouter = {
       // For public image uploads, this is fine
       return { userId: null };
     })
-    .onUploadComplete(async ({ metadata, file }) => {
+    .onUploadComplete(async ({ file }) => {
       // This code RUNS ON YOUR SERVER after upload
       console.log("Upload complete for anonymous user");
       console.log("File URL:", file.ufsUrl);

@@ -32,7 +32,7 @@ export function TradeRequestBar({ trade_request, onTradeComplete }: TradeRequest
   const [senderCard, setSenderCard] = useState<CardData | null>(null);
   const [recipientCard, setRecipientCard] = useState<CardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [errorState, setErrorState] = useState(false);
+  // const [errorState, setErrorState] = useState(false);
   
   // Convert database rarity to our component rarity type
   const convertRarity = (dbRarity: string): "common" | "rare" | "epic" | "legendary" => {
@@ -95,7 +95,7 @@ export function TradeRequestBar({ trade_request, onTradeComplete }: TradeRequest
         setLoading(false);
       } catch (err) {
         console.error("Error loading card details:", err);
-        setErrorState(true);
+        // setErrorState(true);
         setLoading(false);
       }
     };

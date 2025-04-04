@@ -2,7 +2,7 @@
 
 import { Card } from "@/components/ui/card";
 import { Camera, Upload, Users, Search, Plus, Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

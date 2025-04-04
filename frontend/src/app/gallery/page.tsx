@@ -16,6 +16,11 @@ import {
 import { FriendshipButton } from "@/components/FriendshipButton";
 import { GallerySkeleton } from "@/components/CardSkeleton";
 
+// Interface for MongoDB documents that may include _id
+interface MongoDBDocument {
+  _id?: string;
+}
+
 // Create a client component that uses useSearchParams
 function GalleryContent() {
   const [cards, setCards] = useState<Card[]>([]);
@@ -45,7 +50,7 @@ function GalleryContent() {
         setUsername(userId ? `${data.username}'s Cards` : "Your Cards");
         
         // Process cards to ensure they have the required properties
-        const processedCards = data.cards.map((card: any, index: number) => {
+        const processedCards = data.cards.map((card: Card & MongoDBDocument, index: number) => {
           // Generate a unique ID if none exists
           if (!card.id) {
             // Use MongoDB _id if available, otherwise generate a fallback ID

@@ -12,8 +12,13 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 
+// Interface for MongoDB documents that may include _id
+interface MongoDBDocument {
+  _id?: string;
+}
+
 interface CardGlanceProps {
-  card: Card; // Accept the full card object
+  card: Card & MongoDBDocument; // Accept the full card object with possible MongoDB fields
 }
 
 export function CardGlance({ card }: CardGlanceProps) {
@@ -131,7 +136,7 @@ export function CardGlance({ card }: CardGlanceProps) {
             </DrawerClose>
             <CardDetailed
               plant={{
-                id: card.id || (card as any)._id || `card-${name.replace(/\s+/g, '-').toLowerCase()}`,
+                id: card.id || card._id || `card-${name.replace(/\s+/g, '-').toLowerCase()}`,
                 name: card.commonName,
                 image: card.image,
                 rating: colors.rarityLevel,

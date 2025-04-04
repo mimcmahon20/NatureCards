@@ -80,7 +80,7 @@ export async function fetchFeedData(): Promise<FeedResponse> {
     // Create posts for the user and their friends
     const posts: CardPost[] = [
       createPost(userData, 'Just now'),
-      ...friendsData.map((friend, index) => {
+      ...friendsData.map((friend) => {
         // Create different timestamps for friends
         const hours = Math.floor(Math.random() * 24) + 1;
         return createPost(friend, `${hours} hours ago`);
