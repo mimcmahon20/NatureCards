@@ -367,20 +367,21 @@ export function TradeRequestGlance({
                 <div className="flex justify-center gap-3 mb-4">
                   <Button 
                     onClick={acceptTrade} 
-                    className="gap-1" 
+                    className="text-green-600 hover:text-green-700 border-green-200 hover:border-green-300" 
+                    variant="outline"
                     disabled={tradeActionLoading}
                   >
                     {tradeActionLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-1" />
                     ) : (
-                      <CheckCircle className="h-4 w-4" />
+                      <CheckCircle className="h-4 w-4 mr-1" />
                     )}
-                    Accept Trade
+                    Accept
                   </Button>
                   <Button 
                     onClick={declineTrade} 
                     variant="outline" 
-                    className="text-red-500 gap-1 border-red-200 hover:border-red-300 hover:text-red-600"
+                    className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
                     disabled={tradeActionLoading}
                   >
                     {tradeActionLoading ? (

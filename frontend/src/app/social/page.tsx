@@ -130,6 +130,24 @@ export default function Social() {
     }
   };
 
+  // Handle friend request completion (accept/decline)
+  const handleFriendRequestComplete = (requestId: string, status: 'accepted' | 'declined') => {
+    // Remove the completed request from the list
+    setFriendRequests(prev => prev.filter(request => request._id !== requestId));
+    
+    // If accepted, add the user to friends list
+    if (status === 'accepted') {
+      const completedRequest = friendRequests.find(request => request._id === requestId);
+      if (completedRequest) {
+        setFriends(prev => [...prev, {
+          _id: completedRequest._id,
+          username: completedRequest.username,
+          profile_image: completedRequest.profile_image
+        }]);
+      }
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Friends Section */}
@@ -174,7 +192,11 @@ export default function Social() {
         ) : friendRequests.length > 0 ? (
           <div className="space-y-4">
             {friendRequests.map((friend_request) => (
-              <FriendRequestBar key={friend_request._id} friend_request={friend_request} />
+              <FriendRequestBar 
+                key={friend_request._id} 
+                friend_request={friend_request}
+                onRequestComplete={handleFriendRequestComplete}
+              />
             ))}
           </div>
         ) : (
