@@ -2,7 +2,7 @@
 
 import { Card } from "@/components/ui/card";
 import { Camera, Upload, Users, Search, Plus, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,9 @@ import { convertToJpegBase64 } from "@/lib/image-utils";
 import { CardDetailed } from "@/components/CardDetailed";
 import Image from "next/image";
 import { UploadButton } from "@/lib/utils";
+import { userState, updateUserData, fetchUserGalleryData } from "@/lib/gallery";
+import { Card as CardType } from "@/types";
+
 // Temporary type for friends
 type Friend = {
   id: string;
@@ -23,6 +26,7 @@ export default function Home() {
   const [team, setTeam] = useState<{ name: string; members: number } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isIdentifying, setIsIdentifying] = useState(false);
+  const [isSavingCard, setIsSavingCard] = useState(false);
   const [identifiedPlant, setIdentifiedPlant] = useState<{
     id: string;
     name: string;
@@ -39,6 +43,9 @@ export default function Home() {
   } | null>(null);
   const [showIdentificationDrawer, setShowIdentificationDrawer] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Add state to track if UploadThing is working
+  const [useLocalStorage, setUseLocalStorage] = useState(false);
 
   // Temporary mock data
   const mockFriends: Friend[] = [
@@ -160,21 +167,172 @@ export default function Home() {
     }
   };
 
-  // Keep the original handleImageCapture for backward compatibility if needed
+  // Add a function to handle direct image upload and storage in localStorage
+  const handleDirectImageUpload = async (file: File) => {
+    try {
+      setIsIdentifying(true);
+      
+      // Create URL for preview
+      const imageUrl = URL.createObjectURL(file);
+      setCapturedImage(imageUrl);
+      
+      // Convert to base64 (for both preview and upload)
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          // Get base64 result
+          const base64String = reader.result as string;
+          
+          // Process base64 for Plant.id API
+          const base64Data = base64String.split(',')[1]; // Remove data URL prefix
+          
+          // Call Plant.id API
+          const plantIdResponse = await identifyPlant(base64Data);
+          
+          // Process response (similar to handleImageFromUrl)
+          const topResult = plantIdResponse.result.classification.suggestions[0];
+          
+          if (!topResult) {
+            throw new Error("No plant identification results found");
+          }
+          
+          // Store the base64 image in localStorage (only in development mode)
+          if (process.env.NODE_ENV === 'development') {
+            try {
+              // Use a random ID as the key
+              const imageKey = `plant_image_${Date.now()}`;
+              localStorage.setItem(imageKey, base64String);
+              console.log('Image stored in localStorage with key:', imageKey);
+            } catch (error) {
+              console.warn('Failed to store image in localStorage:', error);
+            }
+          }
+          
+          // Continue with the plant identification logic
+          const rarity = determineRarity(topResult.probability);
+          
+          // Extract the first sentence from description for fun fact
+          const getFirstSentence = (text: string | undefined): string => {
+            if (!text) return "This plant was identified using AI technology!";
+            
+            const sentenceMatch = text.match(/^.*?[.!?](?:\s|$)/);
+            return sentenceMatch ? sentenceMatch[0].trim() : text.substring(0, 100) + "...";
+          };
+          
+          // Create plant details object
+          const plantDetails = {
+            id: topResult.id,
+            name: topResult.name,
+            image: base64String, // Use base64 directly for development
+            rating: getRatingFromRarity(rarity),
+            rarity: rarity === "uncommon" ? "rare" : rarity,
+            commonName: topResult.name,
+            scientificName: topResult.details?.taxonomy?.genus 
+              ? `${topResult.details.taxonomy.genus} sp.`
+              : topResult.name,
+            family: topResult.details?.taxonomy?.family || "Unknown",
+            funFact: getFirstSentence(topResult.details?.description?.value) || 
+              "This plant was identified using AI technology! No additional information is available.",
+            timePosted: new Date().toLocaleDateString(),
+            location: "Your location",
+            username: "You"
+          };
+          
+          // Set the identified plant
+          setIdentifiedPlant(plantDetails);
+          
+          // Open the drawer to show results
+          setShowIdentificationDrawer(true);
+        } catch (error) {
+          console.error("Error during plant identification:", error);
+          setErrorMessage("Failed to identify plant. Please try again.");
+        } finally {
+          setIsIdentifying(false);
+        }
+      };
+      
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error("Error handling direct image upload:", error);
+      setErrorMessage("Failed to process image. Please try again.");
+      setIsIdentifying(false);
+    }
+  };
+
+  // Modified handleImageCapture to use direct upload if useLocalStorage is true
   const handleImageCapture = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     
     if (file) {
       try {
-        // Create URL for preview
-        const imageUrl = URL.createObjectURL(file);
-        // Use the new function with the image URL
-        await handleImageFromUrl(imageUrl);
+        if (useLocalStorage) {
+          // Use direct upload method
+          await handleDirectImageUpload(file);
+        } else {
+          // Use the original method
+          const imageUrl = URL.createObjectURL(file);
+          await handleImageFromUrl(imageUrl);
+        }
       } catch (error) {
         console.error("Error handling captured image:", error);
         setErrorMessage("Failed to process image. Please try again.");
         setIsIdentifying(false);
       }
+    }
+  };
+
+  // Add a new function to save the identified plant as a card
+  const saveCardToCollection = async () => {
+    if (!identifiedPlant) return;
+    
+    try {
+      setIsSavingCard(true);
+      
+      // Check if user is logged in
+      if (!userState.userId) {
+        throw new Error('Please log in to save cards to your collection');
+      }
+      
+      // Get current user data
+      const userData = await fetchUserGalleryData(userState.userId);
+      
+      // Create a new card from the identified plant
+      const newCard: CardType = {
+        creator: userState.userId,
+        owner: userState.userId,
+        commonName: identifiedPlant.commonName,
+        scientificName: identifiedPlant.scientificName,
+        funFact: identifiedPlant.funFact,
+        timeCreated: new Date().toISOString(),
+        location: identifiedPlant.location || '',
+        rarity: identifiedPlant.rarity === 'rare' ? 'uncommon' : identifiedPlant.rarity,
+        tradeStatus: false,
+        infoLink: '',
+        image: identifiedPlant.image, // Use the uploaded image URL
+        family: identifiedPlant.family
+      };
+      
+      // Add the new card to the user's collection
+      const updatedCards = [...userData.cards, newCard];
+      
+      // Update the user data with the new card
+      await updateUserData({
+        _id: userData._id,
+        username: userData.username,
+        cards: updatedCards
+      });
+      
+      // Close the drawer and show success message
+      setShowIdentificationDrawer(false);
+      
+      // Show success alert
+      alert("Card successfully added to your collection!");
+      
+    } catch (error) {
+      console.error('Error saving card:', error);
+      alert(error instanceof Error ? error.message : "Failed to save card");
+    } finally {
+      setIsSavingCard(false);
     }
   };
 
@@ -341,8 +499,11 @@ export default function Home() {
               }
             }}
             onUploadError={(error: Error) => {
-              console.error("Upload error:", error);
-              setErrorMessage(`Upload failed: ${error.message}`);
+              console.error("Upload error details:", error);
+              // Display more detailed error information
+              setErrorMessage(`Upload failed: ${error.message || 'Unknown error'}`);
+              // Show alert with the error to make debugging easier
+              alert(`Upload error: ${error.message || 'Unknown error'}\n\nCheck browser console for more details.`);
             }}
             appearance={{
               container: "w-full h-full",
@@ -411,13 +572,17 @@ export default function Home() {
                   </Button>
                   <Button 
                     className="mx-2 bg-green-600 hover:bg-green-700"
-                    onClick={() => {
-                      // Here you would save the card to the user's collection
-                      // For now, just close the drawer
-                      setShowIdentificationDrawer(false);
-                    }}
+                    onClick={saveCardToCollection}
+                    disabled={isSavingCard}
                   >
-                    Add to Collection
+                    {isSavingCard ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Add to Collection'
+                    )}
                   </Button>
                 </div>
               </div>
@@ -473,6 +638,20 @@ export default function Home() {
               Close
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Add a mode toggle button for developers */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed top-2 right-2 z-10">
+          <Button
+            onClick={() => setUseLocalStorage(!useLocalStorage)}
+            variant="outline"
+            size="sm"
+            className="text-xs"
+          >
+            {useLocalStorage ? "Using: Local Storage" : "Using: UploadThing"}
+          </Button>
         </div>
       )}
     </div>

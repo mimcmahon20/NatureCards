@@ -20,7 +20,6 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await getServerSession(authOptions);
-  console.log(session);
   return (
     <html lang="en">
       <body
@@ -36,7 +35,7 @@ export default async function RootLayout({
               routerConfig={extractRouterConfig(ourFileRouter)}
             />
             {children}
-            <Navigation />
+            <Navigation userId={session?.user?.id || ''} />
           </ToastProvider>
         </AuthProvider>
       </body>

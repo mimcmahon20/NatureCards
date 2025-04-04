@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { UserRound, UsersRound, Compass, BookImage, MessageCircleHeart } from "lucide-react";
@@ -31,7 +32,13 @@ const NavElement = ({ href, icon, label }: NavElementProps) => {
   );
 };
 
-export function Navigation() {
+export function Navigation({ userId }: { userId: string }) {
+  
+  useEffect(() => {
+    if (userId) {
+      localStorage.setItem('userId', userId);
+    }
+  }, [userId]);
   return (
     <nav className="flex fixed bottom-0 w-full items-center justify-around bg-background border-t border-border py-2">
       <NavElement href="/social" icon={<UsersRound size={28} />} label="Social" />
