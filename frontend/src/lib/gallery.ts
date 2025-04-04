@@ -65,7 +65,8 @@ export async function fetchUserGalleryData(userId: string): Promise<GalleryRespo
     const galleryResponse: GalleryResponse = {
       _id: userData._id,
       username: userData.username,
-      cards: userData.cards || []
+      cards: userData.cards || [],
+      friends: userData.friends || []
     };
     
     return galleryResponse;
