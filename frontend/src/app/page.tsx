@@ -135,9 +135,12 @@ export default function Home() {
         return sentenceMatch ? sentenceMatch[0].trim() : text.substring(0, 100) + "...";
       };
       
+      // Generate a unique ID for the plant
+      const plantId = `plant-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
       // Create plant details object for CardDetailed
       const plantDetails = {
-        id: topResult.id,
+        id: plantId,
         name: topResult.name,
         image: imageUrl,
         rating: getRatingFromRarity(rarity),
@@ -153,6 +156,8 @@ export default function Home() {
         location: "Your location",
         username: "You"
       };
+      
+      console.log('Identified plant (from URL):', plantDetails);
       
       // Set the identified plant
       setIdentifiedPlant(plantDetails);
@@ -219,9 +224,12 @@ export default function Home() {
             return sentenceMatch ? sentenceMatch[0].trim() : text.substring(0, 100) + "...";
           };
           
-          // Create plant details object
+          // Generate a unique ID for the plant
+          const plantId = `plant-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          
+          // Create plant details object - matching format expected by CardDetailed component
           const plantDetails = {
-            id: topResult.id,
+            id: plantId,
             name: topResult.name,
             image: base64String, // Use base64 directly for development
             rating: getRatingFromRarity(rarity),
@@ -237,6 +245,8 @@ export default function Home() {
             location: "Your location",
             username: "You"
           };
+          
+          console.log('Identified plant:', plantDetails);
           
           // Set the identified plant
           setIdentifiedPlant(plantDetails);
@@ -297,6 +307,7 @@ export default function Home() {
       const userData = await fetchUserGalleryData(userState.userId);
       
       // Create a new card from the identified plant
+      // Ensure it matches the backend schema exactly
       const newCard: CardType = {
         creator: userState.userId,
         owner: userState.userId,
@@ -304,7 +315,7 @@ export default function Home() {
         scientificName: identifiedPlant.scientificName,
         funFact: identifiedPlant.funFact,
         timeCreated: new Date().toISOString(),
-        location: identifiedPlant.location || '',
+        location: identifiedPlant.location || 'Your location',
         rarity: identifiedPlant.rarity === 'rare' ? 'uncommon' : identifiedPlant.rarity,
         tradeStatus: false,
         infoLink: '',
@@ -312,21 +323,28 @@ export default function Home() {
         family: identifiedPlant.family
       };
       
+      console.log('Saving new card:', newCard);
+      
       // Add the new card to the user's collection
       const updatedCards = [...userData.cards, newCard];
       
       // Update the user data with the new card
-      await updateUserData({
+      const result = await updateUserData({
         _id: userData._id,
         username: userData.username,
         cards: updatedCards
       });
       
+      console.log('Update result:', result);
+      
       // Close the drawer and show success message
       setShowIdentificationDrawer(false);
       
-      // Show success alert
-      alert("Card successfully added to your collection!");
+      // Show success alert with view collection option
+      if (confirm("Card successfully added to your collection! Would you like to view your collection?")) {
+        // Redirect to gallery page
+        window.location.href = '/gallery';
+      }
       
     } catch (error) {
       console.error('Error saving card:', error);
