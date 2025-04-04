@@ -9,33 +9,38 @@ interface FriendRequestBarProps {
 
 export function FriendRequestBar({ friend_request }: FriendRequestBarProps) {
   return (
-    <Card className="flex flex-col sm:flex-row items-start sm:items-center p-4 gap-4">
-      <div className="flex items-center w-full">
-        <Avatar className="w-12 h-12 mr-4">
-          <AvatarImage src={friend_request.profile_image} alt={friend_request.username} />
-        </Avatar>
-        <CardContent className="flex-1 p-0">
-          <p className="font-medium">{friend_request.username}</p>
-        </CardContent>
-      </div>
-      {friend_request.sender_id == "12345" ? (
-        <div className="flex flex-row gap-2 w-full sm:w-auto">
-          <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => handleProfileClick(friend_request._id)}>
-            View Profile
-          </Button>
-          <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => handleAcceptFriend(friend_request._id)}>
-            Accept
-          </Button>
-          <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => handleDeclineFriend(friend_request._id)}>
-            Decline
-          </Button>
+    <Card className="overflow-hidden">
+      <div className="flex flex-col sm:flex-row">
+        <div className="flex-1 p-4">
+          <div className="flex items-center">
+            <Avatar className="w-12 h-12 mr-4">
+              <AvatarImage src={friend_request.profile_image} alt={friend_request.username} />
+            </Avatar>
+            <CardContent className="flex-1 p-0">
+              <p className="font-medium">{friend_request.username}</p>
+            </CardContent>
+          </div>
         </div>
-      ) : (
-        <Button variant="disabled" size="sm">
-          Friend Request Sent
-        </Button>
-      )
-      }
+        <div className="flex items-center justify-end p-4 bg-gray-50 border-t sm:border-t-0 sm:border-l">
+          {friend_request.sender_id == "12345" ? (
+            <div className="flex flex-row gap-2">
+              <Button variant="outline" size="sm" onClick={() => handleProfileClick(friend_request._id)}>
+                View Profile
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleAcceptFriend(friend_request._id)}>
+                Accept
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleDeclineFriend(friend_request._id)}>
+                Decline
+              </Button>
+            </div>
+          ) : (
+            <Button variant="disabled" size="sm">
+              Friend Request Sent
+            </Button>
+          )}
+        </div>
+      </div>
     </Card>
   );
 }
