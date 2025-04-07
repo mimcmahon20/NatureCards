@@ -6,6 +6,8 @@ interface UserState {
   userId: string | null;
   setUserId: (id: string) => void;
   clearUserId: () => void;
+  // Add a function to identify if we're working with the authenticated user
+  isAuthenticatedUser: (id: string) => boolean;
 }
 
 // Singleton user state manager
@@ -24,13 +26,18 @@ export const userState: UserState = {
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('userId');
     }
+  },
+
+  // Helper to check if a given ID matches the authenticated user
+  isAuthenticatedUser(id: string) {
+    return this.userId === id;
   }
 };
 
 // Get the backend URL from environment variables
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://nature-cards-e3f71dcee8d3.herokuapp.com';
 
-// Function to fetch gallery data (no user specified - returns default user)
+// Function to fetch gallery data for the authenticated user
 export async function fetchGalleryData(): Promise<GalleryResponse> {
   try {
     // If we have a userId in state, use that
@@ -47,7 +54,7 @@ export async function fetchGalleryData(): Promise<GalleryResponse> {
   }
 }
 
-// Function to fetch gallery data for a specific user
+// Function to fetch gallery data for a specific user without modifying auth state
 export async function fetchUserGalleryData(userId: string): Promise<GalleryResponse> {
   try {
     const response = await fetch(`${BACKEND_URL}/db/find/${userId}`);
@@ -58,8 +65,8 @@ export async function fetchUserGalleryData(userId: string): Promise<GalleryRespo
     
     const userData = await response.json();
     
-    // Store the userId in state for future use
-    userState.setUserId(userId);
+    // No longer setting userId in state - we only want to do that at login
+    // The commented line is removed completely to avoid confusion
     
     // Convert backend response to GalleryResponse format
     const galleryResponse: GalleryResponse = {
@@ -72,6 +79,21 @@ export async function fetchUserGalleryData(userId: string): Promise<GalleryRespo
     return galleryResponse;
   } catch (error) {
     console.error('Error fetching user gallery data:', error);
+    throw error;
+  }
+}
+
+// Function to authenticate a user and set their ID in local storage
+export async function authenticateUser(userId: string): Promise<GalleryResponse> {
+  try {
+    const userData = await fetchUserGalleryData(userId);
+    
+    // Only here do we set the userId in state/localStorage
+    userState.setUserId(userId);
+    
+    return userData;
+  } catch (error) {
+    console.error('Error authenticating user:', error);
     throw error;
   }
 }
@@ -170,7 +192,7 @@ export async function createUser(userData: { username: string, email: string, pa
     
     const newUserData = await response.json();
     
-    // Store the new user ID in state
+    // Store the new user ID in state - this is correct as this is a login/authentication action
     userState.setUserId(newUserData._id);
     
     // Convert backend response to GalleryResponse format
