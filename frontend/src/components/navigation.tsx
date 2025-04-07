@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { UserRound, UsersRound, Compass, BookImage, MessageCircleHeart } from "lucide-react";
+import { userState } from "@/lib/gallery";
 
 interface NavElementProps {
   href: string;
@@ -33,12 +34,19 @@ const NavElement = ({ href, icon, label }: NavElementProps) => {
 };
 
 export function Navigation({ userId }: { userId: string }) {
-  const userIdInLocalStorage = localStorage.getItem('userId');
   useEffect(() => {
+    // Only initialize the userId in localStorage when:
+    // 1. A valid userId is provided (likely from server-side props or authentication)
+    // 2. There's no userId already in the userState
+    // This prevents overwriting the authenticated user's ID when viewing other users' content
+    const userIdInLocalStorage = userState.userId;
+    
     if (userId && !userIdInLocalStorage) {
-      localStorage.setItem('userId', userId);
+      // This is an initial login or session restoration
+      userState.setUserId(userId);
     }
   }, [userId]);
+  
   return (
     <nav className="flex fixed bottom-0 w-full items-center justify-around bg-background border-t border-border py-2">
       <NavElement href="/social" icon={<UsersRound size={28} />} label="Social" />

@@ -8,9 +8,11 @@ import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { updateUserProfile, deleteUserAccount } from "@/lib/users";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { FeedbackAlert } from "@/components/ui/feedback-alert";
+import { signOut } from "next-auth/react";
 
 import bgDesktop from "@/app/images/bg-desktop.png";
 import bgMobile from "@/app/images/bg-mobilev2.png";
+import { userState } from "@/lib/gallery";
 
 export default function UserSettings() {
   const router = useRouter();
@@ -74,6 +76,11 @@ export default function UserSettings() {
       setTimeout(() => setFeedback(null), 5000);
     }
   };
+
+  const signUserOutAndClearUserId = () => {
+    signOut({ callbackUrl: '/' });
+    userState.clearUserId();
+  }
 
   return (
     <div className="relative h-screen overflow-hidden">
@@ -149,6 +156,10 @@ export default function UserSettings() {
           <div className="justify-end flex gap-2 mt-6">
             <Button className="hover:bg-gray-700" onClick={handleSave}>
               Save Changes
+            </Button>
+
+            <Button className="hover:bg-gray-700" onClick={signUserOutAndClearUserId}>
+              Sign Out
             </Button>
 
             <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
