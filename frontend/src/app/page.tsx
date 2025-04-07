@@ -49,6 +49,23 @@ interface Coordinates {
   longitude: number;
 }
 
+// Add a utility function for conditional logging
+const logDebug = (message: string, data?: any) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(message, data);
+  }
+};
+
+// Add a utility function for important logging
+const logError = (message: string, error?: any) => {
+  // Always log errors, but limit data in production
+  if (process.env.NODE_ENV === 'production') {
+    console.error(message);
+  } else {
+    console.error(message, error);
+  }
+};
+
 export default function Home() {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [team, setTeam] = useState<{ name: string; members: string[] } | null>(
@@ -95,7 +112,7 @@ export default function Home() {
   }, []);
 
   // Function to get the user's location
-  const requestUserLocation = () => {
+  const requestUserLocation = useCallback(() => {
     // Only run on the client side
     if (!isBrowser) return;
 
@@ -114,17 +131,17 @@ export default function Home() {
           if (!isDefaultLocation) {
             setUserLocation(parsedLocation);
             setIsRequestingLocation(false);
-            console.log("Using saved location:", parsedLocation);
+            logDebug("Using saved location", parsedLocation);
             return;
           }
           // If it's a default location, try requesting again
         } catch (error) {
-          console.error("Error parsing saved location data:", error);
+          logError("Error parsing saved location data");
           // Continue to request new location
         }
       }
     } catch (error) {
-      console.error("Error accessing localStorage:", error);
+      logError("Error accessing localStorage");
     }
 
     // Request location from browser - only run on client
@@ -133,7 +150,7 @@ export default function Home() {
         async (position) => {
           try {
             const { latitude, longitude } = position.coords;
-            console.log("Obtained coordinates:", { latitude, longitude });
+            logDebug("Obtained coordinates", { latitude, longitude });
 
             // Get location name using reverse geocoding
             let locationName = "Unknown Location";
@@ -150,7 +167,7 @@ export default function Home() {
                   .join(", ");
               }
             } catch (error) {
-              console.error("Error getting location name:", error);
+              logError("Error getting location name");
             }
 
             // Save location data
@@ -167,17 +184,17 @@ export default function Home() {
                 JSON.stringify(locationData)
               );
             } catch (error) {
-              console.error("Error saving to localStorage:", error);
+              logError("Error saving to localStorage");
             }
-            console.log("Location saved:", locationData);
+            logDebug("Location saved", locationData);
           } catch (error) {
-            console.error("Error processing location:", error);
+            logError("Error processing location");
           } finally {
             setIsRequestingLocation(false);
           }
         },
         (error) => {
-          console.error("Error getting location:", error);
+          logError("Error getting location", error.code);
           setIsRequestingLocation(false);
 
           // Show a prompt if permission was denied
@@ -213,7 +230,7 @@ export default function Home() {
               JSON.stringify(defaultLocation)
             );
           } catch (error) {
-            console.error("Error saving to localStorage:", error);
+            logError("Error saving to localStorage");
           }
         },
         {
@@ -223,7 +240,7 @@ export default function Home() {
         }
       );
     } else {
-      console.error("Geolocation is not supported by this browser.");
+      logError("Geolocation is not supported by this browser");
       setIsRequestingLocation(false);
 
       if (isBrowser) {
@@ -245,10 +262,10 @@ export default function Home() {
           JSON.stringify(defaultLocation)
         );
       } catch (error) {
-        console.error("Error saving to localStorage:", error);
+        logError("Error saving to localStorage");
       }
     }
-  };
+  }, [isBrowser]);
 
   // Request location when the component mounts - but only on the client
   useEffect(() => {
@@ -354,10 +371,7 @@ export default function Home() {
               hasUpdates = true;
             }
           } catch (error) {
-            console.error(
-              `Error fetching details for friend ${friend.id}:`,
-              error
-            );
+            logError(`Error fetching details for friend ${friend.id}`);
             // Continue with other friends if one fails
           }
         }
@@ -368,7 +382,7 @@ export default function Home() {
         setFriends(updatedFriends);
       }
     } catch (error) {
-      console.error("Error fetching friend details:", error);
+      logError("Error fetching friend details");
     } finally {
       setIsFetchingFriendDetails(false);
     }
@@ -425,10 +439,7 @@ export default function Home() {
                 }
               }
             } catch (error) {
-              console.error(
-                `Error fetching details for team member ${memberId}:`,
-                error
-              );
+              logError(`Error fetching details for team member ${memberId}`);
               // Continue with other members if one fails
             }
           }
@@ -439,7 +450,7 @@ export default function Home() {
           setFriends(updatedFriends);
         }
       } catch (error) {
-        console.error("Error fetching team member details:", error);
+        logError("Error fetching team member details");
       }
     },
     [friends]
@@ -844,7 +855,7 @@ export default function Home() {
         };
       }
 
-      console.log("Saving new card:", newCard);
+      logDebug("Saving new card", newCard);
 
       // Save to current user's collection first
       try {
@@ -854,9 +865,9 @@ export default function Home() {
           username: userData.username,
           cards: updatedCards,
         });
-        console.log("Card successfully added to your collection");
+        logDebug("Card successfully added to your collection");
       } catch (error) {
-        console.error("Error saving card to your collection:", error);
+        logError("Error saving card to your collection", error);
         throw new Error("Failed to save card to your collection");
       }
 
@@ -870,20 +881,16 @@ export default function Home() {
       );
 
       if (teamMembers.length > 0) {
-        console.log(
-          `Attempting to share card with ${teamMembers.length} team members`
-        );
+        logDebug(`Attempting to share card with ${teamMembers.length} team members`);
 
         // Process each team member one by one (sequential processing)
         for (const memberId of teamMembers) {
           try {
-            console.log(`Processing team member: ${memberId}`);
+            logDebug(`Processing team member: ${memberId}`);
 
             // Get team member's data
             const memberData = await fetchUserGalleryData(memberId);
-            console.log(
-              `Retrieved data for team member: ${memberData.username}`
-            );
+            logDebug(`Retrieved data for team member: ${memberData.username}`);
 
             // Create a version of the card for this team member
             const memberCard = {
@@ -901,15 +908,10 @@ export default function Home() {
               cards: memberUpdatedCards,
             });
 
-            console.log(
-              `Successfully shared card with team member: ${memberData.username}`
-            );
+            logDebug(`Successfully shared card with team member: ${memberData.username}`);
             successCount++;
           } catch (error) {
-            console.error(
-              `Failed to share card with team member ${memberId}:`,
-              error
-            );
+            logError(`Failed to share card with team member ${memberId}`);
             failureCount++;
             // Continue with the next member even if this one fails
           }
@@ -938,7 +940,7 @@ export default function Home() {
         window.location.href = "/gallery";
       }
     } catch (error) {
-      console.error("Error saving card:", error);
+      logError("Error saving card", error);
       alert(error instanceof Error ? error.message : "Failed to save card");
     } finally {
       setIsSavingCard(false);
