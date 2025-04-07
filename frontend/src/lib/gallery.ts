@@ -136,13 +136,24 @@ export function sortCards(cards: Card[], sortBy: SortOption): Card[] {
 }
 
 // Function to update a user's data (e.g., after adding a new card)
+// This can update either the current user or another user (like a team member)
 export async function updateUserData(userData: Partial<GalleryResponse>): Promise<GalleryResponse> {
   try {
     if (!userState.userId) {
       throw new Error('No user ID available. User must be logged in first.');
     }
     
-    const response = await fetch(`${BACKEND_URL}/db/update/${userState.userId}`, {
+    // Get the ID of the user we want to update
+    const userIdToUpdate = userData._id;
+    
+    if (!userIdToUpdate) {
+      throw new Error('Missing user ID in update data');
+    }
+    
+    console.log(`Updating user data for user ID: ${userIdToUpdate}`);
+    
+    // Use the provided user ID for the endpoint
+    const response = await fetch(`${BACKEND_URL}/db/update/${userIdToUpdate}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -160,7 +171,8 @@ export async function updateUserData(userData: Partial<GalleryResponse>): Promis
     const galleryResponse: GalleryResponse = {
       _id: updatedUserData._id,
       username: updatedUserData.username,
-      cards: updatedUserData.cards || []
+      cards: updatedUserData.cards || [],
+      friends: updatedUserData.friends || []
     };
     
     return galleryResponse;

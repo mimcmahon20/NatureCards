@@ -2,7 +2,7 @@
 
 import { Card } from "@/components/ui/card";
 import { Camera, Upload, Users, Search, Plus, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,18 +12,25 @@ import { CardDetailed } from "@/components/CardDetailed";
 import Image from "next/image";
 import { UploadButton } from "@/lib/utils";
 import { userState, updateUserData, fetchUserGalleryData } from "@/lib/gallery";
-import { Card as CardType } from "@/types";
+import { Card as CardType } from '@/types';
 
-// Temporary type for friends
+// Define Friend type for UI
 type Friend = {
   id: string;
   name: string;
   avatar: string;
 };
 
+// Define a type for friend objects as they may appear in the API
+interface FriendObject {
+  _id?: string;
+  id?: string;
+  username?: string;
+}
+
 export default function Home() {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [team, setTeam] = useState<{ name: string; members: number } | null>(null);
+  const [team, setTeam] = useState<{ name: string; members: string[] } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isIdentifying, setIsIdentifying] = useState(false);
   const [isSavingCard, setIsSavingCard] = useState(false);
@@ -43,28 +50,258 @@ export default function Home() {
   } | null>(null);
   const [showIdentificationDrawer, setShowIdentificationDrawer] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isFetchingFriendDetails, setIsFetchingFriendDetails] = useState(false);
+  
+  // Create a ref to store the DrawerTrigger element
+  const createTeamButtonRef = useRef<HTMLButtonElement>(null);
 
   // Add state to track if UploadThing is working
   const [useLocalStorage, setUseLocalStorage] = useState(false);
 
-  // Temporary mock data
-  const mockFriends: Friend[] = [
-    { id: "1", name: "Alex Smith", avatar: "AS" },
-    { id: "2", name: "Jamie Lee", avatar: "JL" },
-    { id: "3", name: "Chris Wong", avatar: "CW" },
-    { id: "4", name: "Taylor Swift", avatar: "TS" },
-  ];
+  // Load friends from the authenticated user's data
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        if (!userState.userId) return;
+        
+        setIsLoading(true);
+        const userData = await fetchUserGalleryData(userState.userId);
+        
+        // Handle friends data if available
+        if (userData.friends && Array.isArray(userData.friends) && userData.friends.length > 0) {
+          // Check if friends are detailed objects or just IDs
+          if (typeof userData.friends[0] === 'string') {
+            // If friends are just IDs, use mock data for display (in a real app, you'd fetch user details)
+            const friendIds = userData.friends as string[];
+            const mockFriendsList: Friend[] = friendIds.map((id, index) => ({
+              id,
+              name: `Friend ${index + 1}`,
+              avatar: `F${index + 1}`
+            }));
+            setFriends(mockFriendsList);
+          } else {
+            // Friends are objects with details
+            const friendObjects = userData.friends as unknown as FriendObject[];
+            const friendsList: Friend[] = friendObjects.map(friend => ({
+              id: friend.id || friend._id || "unknown",
+              name: friend.username || "Friend",
+              avatar: friend.username ? friend.username.substring(0, 2).toUpperCase() : "FR"
+            }));
+            setFriends(friendsList);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadUserData();
+  }, []);
 
-  const filteredFriends = mockFriends.filter((friend) =>
+  const filteredFriends = friends.filter((friend) =>
     friend.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Add mock invitations data
-  const mockInvitations = [
-    { id: "1", teamName: "Nature Explorers", invitedBy: "Alex Smith" },
-    { id: "2", teamName: "Bird Watchers", invitedBy: "Jamie Lee" },
-    { id: "3", teamName: "Plant Lovers", invitedBy: "Chris Wong" },
-  ];
+  // Toggle friend selection when creating a team
+  const toggleFriendSelection = (friendId: string) => {
+    setSelectedFriends(prev => {
+      if (prev.includes(friendId)) {
+        return prev.filter(id => id !== friendId);
+      } else {
+        return [...prev, friendId];
+      }
+    });
+  };
+
+  // Function to fetch detailed information about friends
+  const fetchFriendDetails = async () => {
+    if (!userState.userId || friends.length === 0 || isFetchingFriendDetails) return;
+    
+    try {
+      setIsFetchingFriendDetails(true);
+      
+      // Create a new array to hold updated friend info
+      const updatedFriends = [...friends];
+      let hasUpdates = false;
+      
+      // Fetch details for each friend that only has an ID
+      for (let i = 0; i < updatedFriends.length; i++) {
+        const friend = updatedFriends[i];
+        
+        // Only fetch details if this looks like a placeholder entry
+        // (Name is just "Friend X" or similar)
+        if (friend.name.startsWith('Friend ') || friend.avatar.length <= 2) {
+          try {
+            // Fetch friend's full details from the API
+            const friendData = await fetchUserGalleryData(friend.id);
+            
+            // Update the friend's information if we found it
+            if (friendData && friendData.username) {
+              updatedFriends[i] = {
+                ...friend,
+                name: friendData.username,
+                avatar: friendData.username.substring(0, 2).toUpperCase()
+              };
+              hasUpdates = true;
+            }
+          } catch (error) {
+            console.error(`Error fetching details for friend ${friend.id}:`, error);
+            // Continue with other friends if one fails
+          }
+        }
+      }
+      
+      // Update the friends list with new details if any were found
+      if (hasUpdates) {
+        setFriends(updatedFriends);
+      }
+    } catch (error) {
+      console.error('Error fetching friend details:', error);
+    } finally {
+      setIsFetchingFriendDetails(false);
+    }
+  };
+
+  // Handler for when the drawer is opened
+  const handleDrawerOpen = () => {
+    setIsDrawerOpen(true);
+    // Fetch detailed information about friends when drawer opens
+    fetchFriendDetails();
+  };
+
+  // Create a team with selected friends
+  const createTeam = () => {
+    if (selectedFriends.length === 0) {
+      alert("Please select at least one friend to create a team.");
+      return;
+    }
+    
+    const teamName = (document.getElementById("teamName") as HTMLInputElement)?.value || "";
+    
+    if (!teamName || teamName.trim() === "") {
+      alert("Please enter a team name.");
+      return;
+    }
+    
+    setTeam({
+      name: teamName.trim(),
+      members: selectedFriends
+    });
+    
+    // Store team in localStorage for persistence
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('natureCardsTeam', JSON.stringify({
+        name: teamName.trim(),
+        members: selectedFriends
+      }));
+    }
+    
+    // Reset selection
+    setSelectedFriends([]);
+    
+    // Close drawer by clicking outside (simple approach)
+    document.body.click();
+  };
+
+  // Load team from localStorage on component mount
+  useEffect(() => {
+    if (typeof localStorage !== 'undefined') {
+      const savedTeam = localStorage.getItem('natureCardsTeam');
+      if (savedTeam) {
+        try {
+          const parsedTeam = JSON.parse(savedTeam);
+          setTeam(parsedTeam);
+          
+          // Make sure we have the full details of team members
+          // This will look through the friends list and make sure we have detailed info for team members
+          setTimeout(() => {
+            if (userState.userId && parsedTeam.members.length > 0) {
+              fetchTeamMemberDetails(parsedTeam.members);
+            }
+          }, 500); // Small delay to ensure initial friend loading has completed
+        } catch (e) {
+          console.error("Error parsing saved team:", e);
+        }
+      }
+    }
+  }, [fetchFriendDetails]);
+  
+  // Function to fetch detailed information about team members
+  const fetchTeamMemberDetails = async (memberIds: string[]) => {
+    if (!userState.userId || memberIds.length === 0) return;
+    
+    try {
+      // Create a map of existing friends for quick lookup
+      const friendMap = new Map(friends.map(friend => [friend.id, friend]));
+      
+      // Create a new array to hold updated friend info
+      const updatedFriends = [...friends];
+      let hasUpdates = false;
+      
+      // For each team member that's not in our friends list with complete details
+      for (const memberId of memberIds) {
+        const existingFriend = friendMap.get(memberId);
+        
+        // Only fetch if we don't have this friend or have incomplete details
+        if (!existingFriend || 
+            existingFriend.name.startsWith('Friend ') || 
+            existingFriend.avatar.length <= 2) {
+          try {
+            // Fetch friend's full details from the API
+            const friendData = await fetchUserGalleryData(memberId);
+            
+            if (friendData && friendData.username) {
+              // Create friend details
+              const friendDetails = {
+                id: memberId,
+                name: friendData.username,
+                avatar: friendData.username.substring(0, 2).toUpperCase()
+              };
+              
+              if (existingFriend) {
+                // Update existing friend
+                const index = updatedFriends.findIndex(f => f.id === memberId);
+                if (index !== -1) {
+                  updatedFriends[index] = friendDetails;
+                  hasUpdates = true;
+                }
+              } else {
+                // Add new friend to the list
+                updatedFriends.push(friendDetails);
+                hasUpdates = true;
+              }
+            }
+          } catch (error) {
+            console.error(`Error fetching details for team member ${memberId}:`, error);
+            // Continue with other members if one fails
+          }
+        }
+      }
+      
+      // Update the friends list with new details if any were found
+      if (hasUpdates) {
+        setFriends(updatedFriends);
+      }
+    } catch (error) {
+      console.error('Error fetching team member details:', error);
+    }
+  };
+
+  // Function to leave the current team
+  const leaveTeam = () => {
+    if (confirm("Are you sure you want to leave this team?")) {
+      setTeam(null);
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('natureCardsTeam');
+      }
+    }
+  };
 
   // Determine rarity based on probability
   const determineRarity = (probability: number): "common" | "uncommon" | "rare" | "epic" | "legendary" => {
@@ -291,7 +528,7 @@ export default function Home() {
     }
   };
 
-  // Add a new function to save the identified plant as a card
+  // Modified function to save a card to all team members' collections
   const saveCardToCollection = async () => {
     if (!identifiedPlant) return;
     
@@ -325,23 +562,79 @@ export default function Home() {
       
       console.log('Saving new card:', newCard);
       
-      // Add the new card to the user's collection
-      const updatedCards = [...userData.cards, newCard];
+      // Save to current user's collection first
+      try {
+        const updatedCards = [...userData.cards, newCard];
+        await updateUserData({
+          _id: userData._id,
+          username: userData.username,
+          cards: updatedCards
+        });
+        console.log('Card successfully added to your collection');
+      } catch (error) {
+        console.error('Error saving card to your collection:', error);
+        throw new Error('Failed to save card to your collection');
+      }
       
-      // Update the user data with the new card
-      const result = await updateUserData({
-        _id: userData._id,
-        username: userData.username,
-        cards: updatedCards
-      });
+      // Track successes and failures for team sharing
+      let successCount = 0;
+      let failureCount = 0;
       
-      console.log('Update result:', result);
+      // Get team members excluding the current user
+      const teamMembers = (team?.members || []).filter(id => id !== userState.userId);
+      
+      if (teamMembers.length > 0) {
+        console.log(`Attempting to share card with ${teamMembers.length} team members`);
+        
+        // Process each team member one by one (sequential processing)
+        for (const memberId of teamMembers) {
+          try {
+            console.log(`Processing team member: ${memberId}`);
+            
+            // Get team member's data
+            const memberData = await fetchUserGalleryData(memberId);
+            console.log(`Retrieved data for team member: ${memberData.username}`);
+            
+            // Create a version of the card for this team member
+            const memberCard = {
+              ...newCard,
+              owner: memberId // Update the owner to the team member
+            };
+            
+            // Add the card to the member's collection
+            const memberUpdatedCards = [...memberData.cards, memberCard];
+            
+            // Update the member's data with the new card
+            await updateUserData({
+              _id: memberId,
+              username: memberData.username,
+              cards: memberUpdatedCards
+            });
+            
+            console.log(`Successfully shared card with team member: ${memberData.username}`);
+            successCount++;
+          } catch (error) {
+            console.error(`Failed to share card with team member ${memberId}:`, error);
+            failureCount++;
+            // Continue with the next member even if this one fails
+          }
+        }
+      }
       
       // Close the drawer and show success message
       setShowIdentificationDrawer(false);
       
+      // Prepare success message
+      let message = 'Card successfully added to your collection!';
+      if (successCount > 0) {
+        message += ` Also shared with ${successCount} team member${successCount !== 1 ? 's' : ''}.`;
+      }
+      if (failureCount > 0) {
+        message += ` Failed to share with ${failureCount} team member${failureCount !== 1 ? 's' : ''}.`;
+      }
+      
       // Show success alert with view collection option
-      if (confirm("Card successfully added to your collection! Would you like to view your collection?")) {
+      if (confirm(`${message} Would you like to view your collection?`)) {
         // Redirect to gallery page
         window.location.href = '/gallery';
       }
@@ -362,15 +655,58 @@ export default function Home() {
             <h1 className="text-2xl font-bold">{team.name}</h1>
             <p className="text-gray-600 flex items-center gap-2">
               <Users className="w-4 h-4" />
-              {team.members} team members
+              {team.members.length} team member{team.members.length !== 1 ? 's' : ''}
             </p>
+            
+            {/* Display the team members */}
+            <div className="mt-2 max-w-xs">
+              <p className="text-sm text-gray-600 mb-1">Team Members:</p>
+              <div className="flex flex-wrap gap-1 justify-center">
+                {team.members.map(memberId => {
+                  // Check if this is the current user
+                  const isCurrentUser = memberId === userState.userId;
+                  
+                  // Find friend details by ID
+                  const memberDetails = isCurrentUser 
+                    ? { name: 'You (Current User)', avatar: 'ME' } 
+                    : friends.find(f => f.id === memberId);
+                    
+                  return (
+                    <div 
+                      key={memberId}
+                      className={`${isCurrentUser ? 'bg-blue-50 text-blue-800' : 'bg-green-50 text-green-800'} px-2 py-1 rounded-full text-xs flex items-center`}
+                    >
+                      <div className={`w-4 h-4 rounded-full ${isCurrentUser ? 'bg-blue-200' : 'bg-green-200'} flex items-center justify-center mr-1 text-[10px]`}>
+                        {memberDetails?.avatar || memberId.substring(0, 2)}
+                      </div>
+                      <span>{memberDetails?.name || 'Member'}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={leaveTeam} 
+              className="mt-4 text-red-500 border-red-200 hover:bg-red-50"
+            >
+              Leave Team
+            </Button>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-6 bg-transparent px-8 rounded-lg">
             <div className="flex flex-col gap-3 w-full max-w-[200px]">
-              <Drawer>
+              <Drawer onOpenChange={(open) => {
+                setIsDrawerOpen(open);
+                if (isDrawerOpen) {
+                  handleDrawerOpen();
+                }
+              }}>
                 <DrawerTrigger asChild>
                   <Button
+                    ref={createTeamButtonRef}
                     size="lg"
                     className="w-full bg-yellow-950 text-white hover:bg-yellow-950/80"
                   >
@@ -396,7 +732,7 @@ export default function Home() {
                           htmlFor="searchFriends"
                           className="block text-sm font-medium text-gray-700 mb-1"
                         >
-                          Add Team Members
+                          Select Team Members From Your Friends
                         </label>
                         <div className="relative">
                           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
@@ -412,80 +748,52 @@ export default function Home() {
                     </div>
 
                     <div className="flex-1 overflow-y-auto mt-4">
-                      {filteredFriends.map((friend) => (
-                        <div
-                          key={friend.id}
-                          className="flex items-center justify-between py-3 border-b"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                              {friend.avatar}
-                            </div>
-                            <span className="font-medium">{friend.name}</span>
-                          </div>
-                          <Button variant="ghost" size="sm">
-                            <Plus className="w-4 h-4" />
-                          </Button>
+                      {isLoading || isFetchingFriendDetails ? (
+                        <div className="flex justify-center items-center h-40">
+                          <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                          <span>{isLoading ? "Loading friends..." : "Fetching friend details..."}</span>
                         </div>
-                      ))}
+                      ) : filteredFriends.length > 0 ? (
+                        filteredFriends.map((friend) => (
+                          <div
+                            key={friend.id}
+                            className="flex items-center justify-between py-3 border-b"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                {friend.avatar}
+                              </div>
+                              <span className="font-medium">{friend.name}</span>
+                            </div>
+                            <Button 
+                              variant={selectedFriends.includes(friend.id) ? "default" : "ghost"} 
+                              size="sm"
+                              onClick={() => toggleFriendSelection(friend.id)}
+                            >
+                              {selectedFriends.includes(friend.id) ? (
+                                "Selected"
+                              ) : (
+                                <Plus className="w-4 h-4" />
+                              )}
+                            </Button>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          {searchQuery ? "No friends match your search" : "You don't have any friends yet"}
+                        </div>
+                      )}
                     </div>
 
                     <div className="mt-4 pt-4 border-t">
-                      <Button className="w-full" size="lg">
-                        Create Team
+                      <Button 
+                        className="w-full" 
+                        size="lg"
+                        onClick={createTeam}
+                        disabled={selectedFriends.length === 0 || isLoading || isFetchingFriendDetails}
+                      >
+                        Create Team ({selectedFriends.length} selected)
                       </Button>
-                    </div>
-                  </div>
-                </DrawerContent>
-              </Drawer>
-
-              <Drawer>
-                <DrawerTrigger asChild>
-                  <Button
-                    size="lg"
-                    className="w-full bg-green-800 text-white hover:bg-green-800/80"
-                  >
-                    <Users className="mr-2 h-4 w-4" />
-                    Join Team
-                  </Button>
-                </DrawerTrigger>
-                <DrawerContent className="h-[96vh] flex justify-center items-center w-full">
-                  <div className="p-4 w-full sm:w-1/3 flex flex-col h-full">
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Team Invitations
-                        </label>
-                        <div className="flex-1 overflow-y-auto">
-                          {mockInvitations.map((invitation) => (
-                            <div
-                              key={invitation.id}
-                              className="flex items-center justify-between py-3 border-b"
-                            >
-                              <div className="flex flex-col">
-                                <span className="font-medium">
-                                  {invitation.teamName}
-                                </span>
-                                <span className="text-sm text-gray-500">
-                                  Invited by {invitation.invitedBy}
-                                </span>
-                              </div>
-                              <Button
-                                onClick={() =>
-                                  setTeam({
-                                    name: invitation.teamName,
-                                    members: 4,
-                                  })
-                                }
-                                variant="default"
-                                size="sm"
-                              >
-                                Accept
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </DrawerContent>
