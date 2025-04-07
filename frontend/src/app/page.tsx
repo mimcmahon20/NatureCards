@@ -50,14 +50,14 @@ interface Coordinates {
 }
 
 // Add a utility function for conditional logging
-const logDebug = (message: string, data?: any) => {
+const logDebug = (message: string, data?: unknown) => {
   if (process.env.NODE_ENV === 'development') {
     console.log(message, data);
   }
 };
 
 // Add a utility function for important logging
-const logError = (message: string, error?: any) => {
+const logError = (message: string, error?: unknown) => {
   // Always log errors, but limit data in production
   if (process.env.NODE_ENV === 'production') {
     console.error(message);
@@ -135,13 +135,13 @@ export default function Home() {
             return;
           }
           // If it's a default location, try requesting again
-        } catch (error) {
-          logError("Error parsing saved location data");
+        } catch (err) {
+          logError("Error parsing saved location data", err);
           // Continue to request new location
         }
       }
-    } catch (error) {
-      logError("Error accessing localStorage");
+    } catch (err) {
+      logError("Error accessing localStorage", err);
     }
 
     // Request location from browser - only run on client
@@ -166,8 +166,8 @@ export default function Home() {
                   .slice(0, 2)
                   .join(", ");
               }
-            } catch (error) {
-              logError("Error getting location name");
+            } catch (err) {
+              logError("Error getting location name", err);
             }
 
             // Save location data
@@ -183,12 +183,12 @@ export default function Home() {
                 "userLocationData",
                 JSON.stringify(locationData)
               );
-            } catch (error) {
-              logError("Error saving to localStorage");
+            } catch (err) {
+              logError("Error saving to localStorage", err);
             }
             logDebug("Location saved", locationData);
-          } catch (error) {
-            logError("Error processing location");
+          } catch (err) {
+            logError("Error processing location", err);
           } finally {
             setIsRequestingLocation(false);
           }
@@ -229,8 +229,8 @@ export default function Home() {
               "userLocationData",
               JSON.stringify(defaultLocation)
             );
-          } catch (error) {
-            logError("Error saving to localStorage");
+          } catch (err) {
+            logError("Error saving to localStorage", err);
           }
         },
         {
@@ -261,8 +261,8 @@ export default function Home() {
           "userLocationData",
           JSON.stringify(defaultLocation)
         );
-      } catch (error) {
-        logError("Error saving to localStorage");
+      } catch (err) {
+        logError("Error saving to localStorage", err);
       }
     }
   }, [isBrowser]);
@@ -312,8 +312,8 @@ export default function Home() {
             setFriends(friendsList);
           }
         }
-      } catch (error) {
-        console.error("Error loading user data:", error);
+      } catch (err) {
+        logError("Error loading user data", err);
       } finally {
         setIsLoading(false);
       }
@@ -370,8 +370,8 @@ export default function Home() {
               };
               hasUpdates = true;
             }
-          } catch (error) {
-            logError(`Error fetching details for friend ${friend.id}`);
+          } catch (err) {
+            logError(`Error fetching details for friend ${friend.id}`, err);
             // Continue with other friends if one fails
           }
         }
@@ -381,8 +381,8 @@ export default function Home() {
       if (hasUpdates) {
         setFriends(updatedFriends);
       }
-    } catch (error) {
-      logError("Error fetching friend details");
+    } catch (err) {
+      logError("Error fetching friend details", err);
     } finally {
       setIsFetchingFriendDetails(false);
     }
@@ -438,8 +438,8 @@ export default function Home() {
                   hasUpdates = true;
                 }
               }
-            } catch (error) {
-              logError(`Error fetching details for team member ${memberId}`);
+            } catch (err) {
+              logError(`Error fetching details for team member ${memberId}`, err);
               // Continue with other members if one fails
             }
           }
@@ -449,8 +449,8 @@ export default function Home() {
         if (hasUpdates) {
           setFriends(updatedFriends);
         }
-      } catch (error) {
-        logError("Error fetching team member details");
+      } catch (err) {
+        logError("Error fetching team member details", err);
       }
     },
     [friends]
@@ -525,12 +525,12 @@ export default function Home() {
 
             // Clean up the timer on unmount
             return () => clearTimeout(timer);
-          } catch (e) {
-            console.error("Error parsing saved team:", e);
+          } catch (err) {
+            logError("Error parsing saved team", err);
           }
         }
-      } catch (error) {
-        console.error("Error accessing localStorage:", error);
+      } catch (err) {
+        logError("Error accessing localStorage", err);
       }
     }
   }, [isBrowser, fetchTeamMemberDetails]);
@@ -658,15 +658,15 @@ export default function Home() {
         username: "You",
       };
 
-      console.log("Identified plant (from URL):", plantDetails);
+      logDebug("Identified plant (from URL)", plantDetails);
 
       // Set the identified plant
       setIdentifiedPlant(plantDetails);
 
       // Open the drawer to show results
       setShowIdentificationDrawer(true);
-    } catch (error) {
-      console.error("Error during plant identification:", error);
+    } catch (err) {
+      logError("Error during plant identification", err);
       setErrorMessage("Failed to identify plant. Please try again.");
     } finally {
       setIsIdentifying(false);
@@ -712,9 +712,9 @@ export default function Home() {
               // Use a random ID as the key
               const imageKey = `plant_image_${Date.now()}`;
               localStorage.setItem(imageKey, base64String);
-              console.log("Image stored in localStorage with key:", imageKey);
-            } catch (error) {
-              console.warn("Failed to store image in localStorage:", error);
+              logDebug("Image stored in localStorage with key", imageKey);
+            } catch (err) {
+              logError("Failed to store image in localStorage", err);
             }
           }
 
@@ -756,15 +756,15 @@ export default function Home() {
             username: "You",
           };
 
-          console.log("Identified plant:", plantDetails);
+          logDebug("Identified plant", plantDetails);
 
           // Set the identified plant
           setIdentifiedPlant(plantDetails);
 
           // Open the drawer to show results
           setShowIdentificationDrawer(true);
-        } catch (error) {
-          console.error("Error during plant identification:", error);
+        } catch (err) {
+          logError("Error during plant identification", err);
           setErrorMessage("Failed to identify plant. Please try again.");
         } finally {
           setIsIdentifying(false);
@@ -772,14 +772,14 @@ export default function Home() {
       };
 
       reader.readAsDataURL(file);
-    } catch (error) {
-      console.error("Error handling direct image upload:", error);
+    } catch (err) {
+      logError("Error handling direct image upload", err);
       setErrorMessage("Failed to process image. Please try again.");
       setIsIdentifying(false);
     }
   };
 
-  // Modified function to handle direct image upload and storage in localStorage
+  // Modified function to handle image capture
   const handleImageCapture = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -795,8 +795,8 @@ export default function Home() {
           const imageUrl = URL.createObjectURL(file);
           await handleImageFromUrl(imageUrl);
         }
-      } catch (error) {
-        console.error("Error handling captured image:", error);
+      } catch (err) {
+        logError("Error handling captured image", err);
         setErrorMessage("Failed to process image. Please try again.");
         setIsIdentifying(false);
       }
@@ -866,8 +866,8 @@ export default function Home() {
           cards: updatedCards,
         });
         logDebug("Card successfully added to your collection");
-      } catch (error) {
-        logError("Error saving card to your collection", error);
+      } catch (err) {
+        logError("Error saving card to your collection", err);
         throw new Error("Failed to save card to your collection");
       }
 
@@ -910,8 +910,8 @@ export default function Home() {
 
             logDebug(`Successfully shared card with team member: ${memberData.username}`);
             successCount++;
-          } catch (error) {
-            logError(`Failed to share card with team member ${memberId}`);
+          } catch (err) {
+            logError(`Failed to share card with team member ${memberId}`, err);
             failureCount++;
             // Continue with the next member even if this one fails
           }
@@ -939,9 +939,9 @@ export default function Home() {
         // Redirect to gallery page
         window.location.href = "/gallery";
       }
-    } catch (error) {
-      logError("Error saving card", error);
-      alert(error instanceof Error ? error.message : "Failed to save card");
+    } catch (err) {
+      logError("Error saving card", err);
+      alert(err instanceof Error ? err.message : "Failed to save card");
     } finally {
       setIsSavingCard(false);
     }
