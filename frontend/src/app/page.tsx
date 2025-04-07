@@ -43,6 +43,12 @@ interface LocationData {
   locationName: string;
 }
 
+// Define type for coordinates to avoid using 'any'
+interface Coordinates {
+  latitude: number;
+  longitude: number;
+}
+
 export default function Home() {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [team, setTeam] = useState<{ name: string; members: string[] } | null>(
@@ -80,7 +86,7 @@ export default function Home() {
   // Create a ref to store the DrawerTrigger element
   const createTeamButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Add state to track if UploadThing is working
+  // Fix for unused variable - either use it or remove toggle UI if not needed
   const [useLocalStorage, setUseLocalStorage] = useState(false);
 
   // Set isBrowser to true once the component mounts
@@ -249,7 +255,7 @@ export default function Home() {
     if (isBrowser && userState.userId) {
       requestUserLocation();
     }
-  }, [isBrowser, userState.userId]);
+  }, [isBrowser, requestUserLocation]);
 
   // Load friends from the authenticated user's data
   useEffect(() => {
@@ -366,7 +372,7 @@ export default function Home() {
     } finally {
       setIsFetchingFriendDetails(false);
     }
-  }, [userState.userId, friends, isFetchingFriendDetails]);
+  }, [friends, isFetchingFriendDetails]);
 
   // Similarly, memoize the team member details fetching function
   const fetchTeamMemberDetails = useCallback(
@@ -436,19 +442,10 @@ export default function Home() {
         console.error("Error fetching team member details:", error);
       }
     },
-    [userState.userId, friends]
+    [friends]
   );
 
-  // Fix the handler for drawer open to prevent loop
-  const handleDrawerOpen = useCallback(() => {
-    if (!isDrawerOpen) {
-      setIsDrawerOpen(true);
-      // Fetch detailed information about friends when drawer opens
-      fetchFriendDetails();
-    }
-  }, [isDrawerOpen, fetchFriendDetails]);
-
-  // Modify the drawer open change handler to prevent the loop
+  // Fix the drawer open change handler to prevent the loop
   const handleDrawerOpenChange = useCallback(
     (open: boolean) => {
       setIsDrawerOpen(open);
@@ -525,7 +522,7 @@ export default function Home() {
         console.error("Error accessing localStorage:", error);
       }
     }
-  }, [isBrowser, fetchTeamMemberDetails, userState.userId]); // Remove fetchFriendDetails from dependencies
+  }, [isBrowser, fetchTeamMemberDetails]);
 
   // Function to leave the current team
   const leaveTeam = () => {
@@ -835,13 +832,13 @@ export default function Home() {
         family: identifiedPlant.family,
       };
 
-      // Add coordinates if we have them
+      // Add coordinates if we have them - with proper typing
       if (
         userLocation &&
         userLocation.latitude !== 0 &&
         userLocation.longitude !== 0
       ) {
-        (newCard as any).coordinates = {
+        (newCard as CardType & { coordinates: Coordinates }).coordinates = {
           latitude: userLocation.latitude,
           longitude: userLocation.longitude,
         };
@@ -1342,6 +1339,20 @@ export default function Home() {
               Close
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Add a mode toggle button for developers - only shown on client */}
+      {isBrowser && process.env.NODE_ENV === 'development' && (
+        <div className="fixed bottom-16 right-2 z-10">
+          <Button
+            onClick={() => setUseLocalStorage(!useLocalStorage)}
+            variant="outline"
+            size="sm"
+            className="text-xs"
+          >
+            {useLocalStorage ? "Using: Local Storage" : "Using: UploadThing"}
+          </Button>
         </div>
       )}
     </div>
