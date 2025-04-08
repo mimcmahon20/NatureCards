@@ -37,6 +37,15 @@ router.route("/find/:id").get(async (req, res) => {
   }
 });
 
+router.route("/findUsername/:username").get(async (req, res) => {
+  try {
+    const response = await userSchema.findOne({ username: req.params.username });
+    return res.status(200).json(response);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 router.post("/create", async (req, res) => {
   try {
     const newDocument = await userSchema.create(req.body); // Creates and saves the document
