@@ -185,6 +185,8 @@ export async function identifyPlant(
     const result: PlantIdResponse = await response.json();
     console.log('Plant ID API response:', result);
     
+
+    
     return result;
   } catch (error) {
     console.error('Error identifying plant:', error);

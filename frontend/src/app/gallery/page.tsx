@@ -13,7 +13,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { GalleryExamples } from "./examples";
+import { FriendshipButton } from "@/components/FriendshipButton";
+import { GallerySkeleton } from "@/components/CardSkeleton";
+
+// Interface for MongoDB documents that may include _id
+interface MongoDBDocument {
+  _id?: string;
+}
 
 // Create a client component that uses useSearchParams
 function GalleryContent() {
@@ -39,11 +45,23 @@ function GalleryContent() {
           data = await fetchGalleryData();
         }
         
+        console.log("data", data);
         // Update the page title to show whose gallery it is
         setUsername(userId ? `${data.username}'s Cards` : "Your Cards");
         
+        // Process cards to ensure they have the required properties
+        const processedCards = data.cards.map((card: Card & MongoDBDocument, index: number) => {
+          // Generate a unique ID if none exists
+          if (!card.id) {
+            // Use MongoDB _id if available, otherwise generate a fallback ID
+            card.id = card._id || `card-${index}-${new Date().getTime()}`;
+          }
+          
+          return card;
+        });
+        
         // Sort and set the cards
-        setCards(sortCards(data.cards, sortBy));
+        setCards(sortCards(processedCards, sortBy));
       } catch (error) {
         console.error("Failed to fetch gallery data:", error);
       } finally {
@@ -61,10 +79,20 @@ function GalleryContent() {
   return (
     <div className="container mx-auto px-2 sm:px-4 pt-4 sm:pt-8 pb-24">
       {/* Show examples for demo purposes */}
-      <GalleryExamples />
+      {/* <GalleryExamples /> */}
       
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-8 gap-2">
-        <h1 className="text-xl sm:text-2xl font-bold">{username}</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-bold">{username}</h1>
+          
+          {/* Show friendship button only if viewing another user's gallery */}
+          {userId && userId !== "12345" && (
+            <div className="mt-2 sm:mt-0 sm:ml-4">
+              <FriendshipButton userId={userId} username={username} />
+            </div>
+          )}
+        </div>
+        
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="flex items-center gap-2 text-sm sm:text-base w-fit">
@@ -87,18 +115,13 @@ function GalleryContent() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
-        </div>
+        <GallerySkeleton />
       ) : cards.length > 0 ? (
         <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4 md:gap-6">
-          {cards.map((card) => (
+          {cards.map((card, index) => (
             <CardGlance
-              key={card.id || `card-${card.commonName}`}
-              name={card.commonName}
-              image={card.image}
-              rarity={card.rarity === "uncommon" ? "rare" : card.rarity as "common" | "rare" | "epic" | "legendary"}
-              cardId={card.id || `card-${card.commonName.replace(/\s+/g, '-').toLowerCase()}`}
+              key={card.id || `card-${index}-${card.commonName}`}
+              card={card}
             />
           ))}
         </div>
@@ -115,9 +138,7 @@ function GalleryContent() {
 function GalleryLoading() {
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
-      </div>
+      <GallerySkeleton />
     </div>
   );
 }

@@ -1,81 +1,109 @@
 // Import types from the types directory
-import { CardPost, FeedResponse, Card } from '@/types';
-import { getUserById, getAllUsers, generateFeedForUser } from './mock-db';
-import { createPostFromUserCards } from './feed-adapter';
+import { CardPost, FeedResponse, Card, GalleryResponse, CardInPost } from '@/types';
+import { userState, fetchUserGalleryData } from './gallery';
 
-// Function to simulate fetching feed data from backend
+// Helper function to convert a Card to CardInPost
+function convertToCardInPost(card: Card): CardInPost {
+  return {
+    cardId: card.id || String(card.creator),
+    cardName: card.commonName,
+    scientificName: card.scientificName,
+    image: card.image,
+    rarity: card.rarity
+  };
+}
+
+// Helper function to create a post from user data
+function createPost(userData: GalleryResponse, timestamp: string = 'Just now'): CardPost {
+  if (!userData.cards || userData.cards.length === 0) {
+    return {
+      id: userData._id,
+      user: {
+        id: userData._id,
+        username: userData.username,
+        cardCount: 0
+      },
+      timestamp: timestamp,
+      location: 'Unknown location',
+      cards: [],
+      likes: 0,
+      comments: 0
+    };
+  }
+
+  // Use location from first card or default
+  const location = userData.cards[0].location || 'Unknown location';
+  
+  // Convert cards to CardInPost format
+  const cardsInPost = userData.cards.map(convertToCardInPost);
+  
+  return {
+    id: userData._id,
+    user: {
+      id: userData._id,
+      username: userData.username,
+      cardCount: userData.cards.length
+    },
+    timestamp: timestamp,
+    location: location,
+    cards: cardsInPost,
+    likes: Math.floor(Math.random() * 50), // Placeholder likes
+    comments: Math.floor(Math.random() * 10) // Placeholder comments
+  };
+}
+
+// Function to fetch feed data from backend
 export async function fetchFeedData(): Promise<FeedResponse> {
-  // Simulate network delay
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Get the first user as the "current" user
-      const allUsers = getAllUsers();
-      const currentUser = allUsers[0];
-      
-      // Get user's feed data
-      const feedCards = generateFeedForUser(currentUser._id);
-      
-      // Group cards by user to create posts
-      const userCardMap = new Map<string, Card[]>();
-      
-      // First add the current user's cards
-      userCardMap.set(currentUser._id, []);
-      
-      // Then add cards from friends
-      feedCards.forEach(card => {
-        if (!userCardMap.has(card.owner)) {
-          userCardMap.set(card.owner, []);
-        }
-        userCardMap.get(card.owner)?.push(card);
-      });
-      
-      // Create posts from grouped cards
-      const posts: CardPost[] = [];
-      
-      // Convert Map entries to array to fix iteration issue
-      Array.from(userCardMap.entries()).forEach(([userId, cards]) => {
-        if (cards.length > 0) {
-          const user = getUserById(userId);
-          if (user) {
-            const location = cards[0].location || 'Unknown location';
-            const timestamp = userId === currentUser._id ? 
-              'Just now' : 
-              `${Math.floor(Math.random() * 24)} hours ago`;
-            
-            posts.push(createPostFromUserCards(user, location, timestamp));
-          }
-        }
-      });
-      
-      resolve({ posts });
-    }, 1000);
-  });
+  try {
+    if (!userState.userId) {
+      throw new Error('No user ID available. User must be logged in first.');
+    }
+    
+    // Fetch current user's data
+    const userData = await fetchUserGalleryData(userState.userId);
+    
+    // Check if user has friends
+    if (!userData.friends || userData.friends.length === 0) {
+      // If no friends, return just the user's own post
+      return { 
+        posts: [createPost(userData)] 
+      };
+    }
+    
+    // Fetch friends' data
+    const friendsPromises = userData.friends.map(friendId => 
+      fetchUserGalleryData(friendId)
+    );
+    
+    const friendsData = await Promise.all(friendsPromises);
+    
+    // Create posts for the user and their friends
+    const posts: CardPost[] = [
+      createPost(userData, 'Just now'),
+      ...friendsData.map((friend) => {
+        // Create different timestamps for friends
+        const hours = Math.floor(Math.random() * 24) + 1;
+        return createPost(friend, `${hours} hours ago`);
+      })
+    ];
+    
+    return { posts };
+  } catch (error) {
+    console.error('Error fetching feed data:', error);
+    // Return empty feed on error
+    return { posts: [] };
+  }
 }
 
 // Function to fetch feed data for a specific user
 export async function fetchUserFeedData(userId: string): Promise<FeedResponse> {
-  // Simulate network delay
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const user = getUserById(userId);
-      
-      if (!user) {
-        reject(new Error(`User with ID ${userId} not found`));
-        return;
-      }
-      
-      // Get the user's feed but don't use it directly
-      // Instead we create a single post from the user's basic info
-      generateFeedForUser(userId); // Call this but don't store result to avoid linter warning
-      
-      // Create a single post for simplicity
-      const post = createPostFromUserCards(
-        user, 
-        user.cards.length > 0 ? user.cards[0].location || 'Unknown' : 'Unknown',
-        'Just now'
-      );
-      
-      resolve({ posts: [post] });
-    }, 1000);
-  });
+  try {
+    const userData = await fetchUserGalleryData(userId);
+    return {
+      posts: [createPost(userData)]
+    };
+  } catch (error) {
+    console.error(`Error fetching feed data for user ${userId}:`, error);
+    return { posts: [] };
+  }
 } 

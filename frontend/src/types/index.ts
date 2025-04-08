@@ -47,6 +47,7 @@ export interface GalleryResponse {
   _id: string;
   username: string;
   cards: Card[];
+  friends?: string[]; // Array of friend user IDs
 }
 
 // Feed user type
