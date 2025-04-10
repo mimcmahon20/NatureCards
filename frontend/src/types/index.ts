@@ -47,7 +47,9 @@ export interface GalleryResponse {
   _id: string;
   username: string;
   cards: Card[];
-  friends?: string[]; // Array of friend user IDs
+  pending_friends?: PendingFriend[]; // Changed from string[] to PendingFriend[]
+  friends?: ObjectId[]; // Using ObjectId type for consistency
+  profile_picture?: string; // Optional profile picture URL
 }
 
 // Feed user type
@@ -154,4 +156,4 @@ export interface PlantIdResponse {
     }>;
   };
   similar_images: string[];
-} 
+}

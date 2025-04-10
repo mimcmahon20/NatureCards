@@ -73,7 +73,9 @@ export async function fetchUserGalleryData(userId: string): Promise<GalleryRespo
       _id: userData._id,
       username: userData.username,
       cards: userData.cards || [],
-      friends: userData.friends || []
+      friends: userData.friends || [],
+      pending_friends: userData.pending_friends || [],
+      profile_picture: userData.profile_picture || null
     };
     
     return galleryResponse;
