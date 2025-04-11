@@ -85,6 +85,7 @@ export async function fetchUserGalleryData(userId: string): Promise<GalleryRespo
   }
 }
 
+
 // Function to authenticate a user and set their ID in local storage
 export async function authenticateUser(userId: string): Promise<GalleryResponse> {
   try {

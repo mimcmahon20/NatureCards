@@ -6,7 +6,7 @@
  */
 
 import { Card, User, GalleryResponse, ObjectId } from '@/types';
-import { getUserById as getMockUserById } from './mock-db';
+import { getUserById as getMockUserById, getUserByUsername } from './mock-db';
 
 // Type for MongoDB ObjectId reference
 interface MongoDBObjectId {
@@ -148,6 +148,25 @@ export async function fetchUserById(userId: ObjectId): Promise<User> {
     
     if (!user) {
       throw new Error(`User with ID ${userId} not found`);
+    }
+    
+    return user;
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    throw error;
+  }
+}
+
+/**
+ * Fetch a user by their Username
+ */
+export async function fetchUserByUsername(username: string): Promise<User> {
+  try {
+    // Mock implementation using our mock database
+    const user = getUserByUsername(username);
+    
+    if (!user) {
+      throw new Error(`User with username ${username} not found`);
     }
     
     return user;

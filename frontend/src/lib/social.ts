@@ -1,5 +1,9 @@
 import { GalleryResponse, PendingFriend } from "@/types";
 import { fetchGalleryData, fetchUserGalleryData, updateUserData } from "@/lib/gallery";
+import { fetchUserByUsername } from "@/lib/api-adapter";
+
+// Get the backend URL from environment variables
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://nature-cards-e3f71dcee8d3.herokuapp.com';
 
 // Types for friend data. User id is used to fetch most other data
 export interface Friend {
@@ -275,31 +279,72 @@ export const handleDeclineTrade = async (trade_id: string): Promise<boolean> => 
 // Simulates sending a friend request to a user by username
 export async function sendFriendRequest(username: string): Promise<boolean> {
     try {
-        const currentUser = await fetchGalleryData();
+    const currentUser = await fetchGalleryData();
+    const response = await fetch(`${BACKEND_URL}/db/findUsername/${username}`);
         
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/db/findByUsername/${username}`);
-        if (!response.ok) {
-            throw new Error('User not found');
+    if (!response.ok) {
+        throw new Error(`Failed to fetch user: ${response.statusText}`);
+    }
+    
+    const userData = await response.json();
+    
+    // No longer setting userId in state - we only want to do that at login
+    // The commented line is removed completely to avoid confusion
+    
+    // Convert backend response to GalleryResponse format
+    const targetUser: GalleryResponse = {
+    _id: userData._id,
+    username: userData.username,
+    cards: userData.cards || [],
+    friends: userData.friends || [],
+    pending_friends: userData.pending_friends || [],
+    profile_picture: userData.profile_picture || null
+    };
+
+        // Check if a friend request already exists
+        const existingRequest = targetUser.pending_friends.find(
+            request => request.sending === currentUser._id || request.receiving === currentUser._id
+        );
+
+        if (existingRequest) {
+            throw new Error('Friend request already exists');
         }
-        const targetUser = await response.json();
-        
-        // Create properly structured friend request
+
+        // Check if they're already friends
+        if (targetUser.friends.includes(currentUser._id)) {
+            throw new Error('Already friends with this user');
+        }
+
+        // Create friend request object
         const friendRequest: PendingFriend = {
             sending: currentUser._id,
             receiving: targetUser._id
         };
-        
-        const updatedTargetUser = {
-            ...targetUser,
-            pending_friends: [...(targetUser.pending_friends || []), friendRequest]
+
+        // Update both users' pending friends lists
+        const updatedCurrentUser = {
+            ...currentUser,
+            pending_friends: [...(currentUser.pending_friends || []), friendRequest]
         };
-        
-        await updateUserData(updatedTargetUser);
+
+        const updatedTargetUser = {
+            _id: targetUser._id,
+            username: targetUser.username,
+            cards: targetUser.cards,
+            pending_friends: [...(targetUser.pending_friends || []), friendRequest],
+            friends: targetUser.friends
+        };
+
+        // Update both users in database
+        await Promise.all([
+            updateUserData(updatedCurrentUser),
+            updateUserData(updatedTargetUser)
+        ]);
+
         return true;
-        
     } catch (error) {
         console.error('Error sending friend request:', error);
-        return false;
+        throw error;
     }
 }
 

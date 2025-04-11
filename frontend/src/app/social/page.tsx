@@ -34,6 +34,15 @@ export default function Social() {
   });
   const toast = useToast();
 
+  const refreshFriendRequests = async () => {
+    try {
+      const data = await fetchFriendRequestData();
+      setFriendRequests(data);
+    } catch (err) {
+      console.error("Error refreshing friend requests:", err);
+    }
+  };
+
   useEffect(() => {
     const fetchFriends = async () => {
       try {
@@ -183,7 +192,7 @@ export default function Social() {
       <div className="mb-12">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-xl font-bold">Friends</h1>
-          <AddFriendModal />
+          <AddFriendModal onRequestSent={refreshFriendRequests} />
         </div>
         
         {loading.friends ? (
