@@ -137,8 +137,8 @@ export default function Social() {
   // Handle friend request completion (accept/decline)
   const handleFriendRequestComplete = async (requestId: string, status: 'accepted' | 'declined') => {
     try {
-        // Find the request using the MongoDB ObjectId structure
-        const request = friendRequests.find(req => req.sending?.$oid === requestId);
+        // Find the full request data
+        const request = friendRequests.find(req => req._id === requestId);
         
         if (!request) {
             console.error('Friend request not found:', requestId);
@@ -146,19 +146,22 @@ export default function Social() {
         }
 
         if (status === 'accepted') {
-            await handleAcceptFriend(request.sending.$oid);
+            await handleAcceptFriend(request.sender_id);
+            
+            // Immediately update UI by adding the new friend to friends list
+            const newFriend: Friend = {
+                _id: request.sender_id,
+                username: request.username,
+                profile_image: request.profile_image
+            };
+            
+            setFriends(prev => [...prev, newFriend]);
         } else {
-            await handleDeclineFriend(request.sending.$oid);
+            await handleDeclineFriend(request.sender_id);
         }
         
-        // Refresh data
-        const [newFriends, newRequests] = await Promise.all([
-            fetchFriendData(),
-            fetchFriendRequestData()
-        ]);
-        
-        setFriends(newFriends);
-        setFriendRequests(newRequests);
+        // Remove the request from the requests list
+        setFriendRequests(prev => prev.filter(req => req._id !== requestId));
         
     } catch (error) {
         console.error('Error handling friend request:', error);

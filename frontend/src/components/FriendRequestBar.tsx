@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { FriendRequest, handleProfileClick, handleAcceptFriend, handleDeclineFriend } from "@/lib/social";
 import { useToast } from "@/components/ui/toast";
 import { Loader2 } from "lucide-react";
+import { userState } from "@/lib/gallery";
 
 interface FriendRequestBarProps {
   friend_request: FriendRequest;
@@ -100,9 +101,9 @@ export function FriendRequestBar({ friend_request, onRequestComplete }: FriendRe
           </div>
         </div>
         <div className="flex items-center justify-end p-4 bg-gray-50 border-t sm:border-t-0 sm:border-l">
-          {friend_request.sender_id == "12345" ? (
+          {friend_request.receiving === userState.userId ? (
             <div className="flex flex-row gap-2">
-              <Button variant="outline" size="sm" onClick={() => handleProfileClick(friend_request._id)}>
+              <Button variant="outline" size="sm" onClick={() => handleProfileClick(friend_request.sender_id)}>
                 View Profile
               </Button>
               {requestStatus === 'pending' ? (

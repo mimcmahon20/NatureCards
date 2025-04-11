@@ -133,12 +133,14 @@ export const handleTradeRequestClick = (trade_id: string) => {
 }
 
 // Accept friend request ONLY if this user is the recipient. This logic
-// should not be handled by the user who sent the request.
+// should not be handled by the user who sent the request, but check isn't necessary here;
+// Conditional on friend request bar should block the sender from accepting/declining request.
 export const handleAcceptFriend = async (friend_id: string) => {
     try {
         const currentUser = await fetchGalleryData();
+        const otherUser = await fetchUserGalleryData(friend_id);
         
-        // Find the specific friend request using MongoDB ObjectId structure
+        // Find the specific friend request
         const friendRequest = currentUser.pending_friends.find(
             request => request.sending === friend_id
         );
@@ -147,23 +149,29 @@ export const handleAcceptFriend = async (friend_id: string) => {
             throw new Error('Friend request not found');
         }
 
-        // Add friend to friends array using MongoDB ObjectId structure
-        const updatedFriends = [
-            ...(currentUser.friends || []),
-            friend_id
-        ];
-        
-        // Remove from pending_friends
-        const updatedPendingFriends = currentUser.pending_friends.filter(
-            request => request.sending !== friend_id
-        );
-        
-        // Update user data in backend
-        await updateUserData({
+        // Update current user's data
+        const updatedCurrentUser = {
             ...currentUser,
-            friends: updatedFriends,
-            pending_friends: updatedPendingFriends
-        });
+            friends: [...(currentUser.friends || []), friend_id],
+            pending_friends: currentUser.pending_friends.filter(
+                request => request.sending !== friend_id
+            )
+        };
+        
+        // Update other user's data
+        const updatedOtherUser = {
+            ...otherUser,
+            friends: [...(otherUser.friends || []), currentUser._id],
+            pending_friends: otherUser.pending_friends.filter(
+                request => !(request.sending === friend_id && request.receiving === currentUser._id)
+            )
+        };
+
+        // Update both users in database
+        await Promise.all([
+            updateUserData(updatedCurrentUser),
+            updateUserData(updatedOtherUser)
+        ]);
         
     } catch (error) {
         console.error("Error accepting friend request:", error);
@@ -175,23 +183,35 @@ export const handleAcceptFriend = async (friend_id: string) => {
 export const handleDeclineFriend = async (friend_id: string) => {
     try {
         const currentUser = await fetchGalleryData();
+        const otherUser = await fetchUserGalleryData(friend_id);
 
-        // Remove from pending_friends
-        const updatedPendingFriends = currentUser.pending_friends.filter(
-            request => request.sending !== friend_id
-        );
-
-        // Update user data in backend
-        await updateUserData({
+        // Update current user's data
+        const updatedCurrentUser = {
             ...currentUser,
-            pending_friends: updatedPendingFriends
-        });
+            pending_friends: currentUser.pending_friends.filter(
+                request => request.sending !== friend_id
+            )
+        };
+
+        // Update other user's data - fix the filter condition to remove the request
+        const updatedOtherUser = {
+            ...otherUser,
+            pending_friends: otherUser.pending_friends.filter(
+                request => !(request.sending === friend_id && request.receiving === currentUser._id)
+            )
+        };
+
+        // Update both users in database
+        await Promise.all([
+            updateUserData(updatedCurrentUser),
+            updateUserData(updatedOtherUser)
+        ]);
 
     } catch (error) {
         console.error("Error declining friend request:", error);
         throw error;
     }
-}
+};
 
 //Handled when trade recipient accepts trade request, exchanging card data between sender and recipient
 export const handleAcceptTrade = async (trade_request: TradeRequest): Promise<boolean> => {
