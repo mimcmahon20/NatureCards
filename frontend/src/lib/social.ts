@@ -18,7 +18,7 @@ export interface FriendRequest {
     recipient_id: string;
     username: string;
     profile_image: string;
-    sending: string; 
+    sending: string;
     receiving: string;
 }
 
@@ -88,7 +88,7 @@ export async function fetchFriendRequestData(): Promise<FriendRequest[]> {
         const requestPromises = pendingFriendsArray.map(async (request) => {
             try {
                 // note that request.sending and request.receiving represent user IDs
-                const otherUserId = request.sending === currentUser._id ? 
+                const otherUserId = request.sending === currentUser._id ?
                     request.receiving : request.sending;
 
                 console.log(`Fetching data for user ${otherUserId}`);
@@ -125,7 +125,7 @@ export async function fetchTradeRequestData(): Promise<TradeRequest[]> {
     try {
         const currentUser = await fetchGalleryData();
         console.log("Current user data for trades:", currentUser);
-        
+
         if (!currentUser?.trading || currentUser.trading.length === 0) {
             console.log("No trade requests found");
             return [];
@@ -164,12 +164,12 @@ export const handleAcceptFriend = async (friend_id: string) => {
     try {
         const currentUser = await fetchGalleryData();
         const otherUser = await fetchUserGalleryData(friend_id);
-        
+
         // Find the specific friend request
         const friendRequest = currentUser.pending_friends.find(
             request => request.sending === friend_id
         );
-        
+
         if (!friendRequest) {
             throw new Error('Friend request not found');
         }
@@ -182,7 +182,7 @@ export const handleAcceptFriend = async (friend_id: string) => {
                 request => request.sending !== friend_id
             )
         };
-        
+
         // Update other user's data
         const updatedOtherUser = {
             ...otherUser,
@@ -197,7 +197,7 @@ export const handleAcceptFriend = async (friend_id: string) => {
             updateUserData(updatedCurrentUser),
             updateUserData(updatedOtherUser)
         ]);
-        
+
     } catch (error) {
         console.error("Error accepting friend request:", error);
         throw error;
@@ -244,14 +244,17 @@ export const handleAcceptTrade = async (trade_request: TradeRequest): Promise<bo
         const currentUser = await fetchGalleryData();
         const tradePartner = await fetchUserGalleryData(trade_request.offeredCard.owner);
 
+        // Create the exchanged card objects with updated ownership
+        const senderCardWithNewOwner = { ...trade_request.offeredCard, owner: currentUser._id };
+        const recipientCardWithNewOwner = { ...trade_request.requestedCard, owner: tradePartner._id };
+
         // Exchange card ownership
         const updatedCurrentUser = {
             ...currentUser,
-            cards: currentUser.cards.map(card => 
-                card.id === trade_request.requestedCard.id ? 
-                    { ...card, owner: tradePartner._id } : card
-            ).concat([{ ...trade_request.offeredCard, owner: currentUser._id }])
-            .filter(card => card.id !== trade_request.requestedCard.id),
+            cards: [
+                ...currentUser.cards.filter(card => card.id !== trade_request.requestedCard.id),
+                senderCardWithNewOwner
+            ],
             trading: currentUser.trading.filter(t => 
                 t.offeredCard.id !== trade_request.offeredCard.id
             )
@@ -259,11 +262,10 @@ export const handleAcceptTrade = async (trade_request: TradeRequest): Promise<bo
 
         const updatedPartnerUser = {
             ...tradePartner,
-            cards: tradePartner.cards.map(card =>
-                card.id === trade_request.offeredCard.id ? 
-                    { ...card, owner: currentUser._id } : card
-            ).concat([{ ...trade_request.requestedCard, owner: tradePartner._id }])
-            .filter(card => card.id !== trade_request.offeredCard.id),
+            cards: [
+                ...tradePartner.cards.filter(card => card.id !== trade_request.offeredCard.id),
+                recipientCardWithNewOwner
+            ],
             trading: tradePartner.trading.filter(t => 
                 t.offeredCard.id !== trade_request.offeredCard.id
             )
@@ -289,14 +291,14 @@ export const handleDeclineTrade = async (trade_request: TradeRequest): Promise<b
         // Remove trade from both users' trading arrays
         const updatedCurrentUser = {
             ...currentUser,
-            trading: currentUser.trading.filter(t => 
+            trading: currentUser.trading.filter(t =>
                 t.offeredCard.id !== trade_request.offeredCard.id
             )
         };
 
         const updatedPartnerUser = {
             ...tradePartner,
-            trading: tradePartner.trading.filter(t => 
+            trading: tradePartner.trading.filter(t =>
                 t.offeredCard.id !== trade_request.offeredCard.id
             )
         };
@@ -351,27 +353,27 @@ export async function sendTradeRequest(offeredCard: Card, requestedCard: Card): 
 // Simulates sending a friend request to a user by username
 export async function sendFriendRequest(username: string): Promise<boolean> {
     try {
-    const currentUser = await fetchGalleryData();
-    const response = await fetch(`${BACKEND_URL}/db/findUsername/${username}`);
-        
-    if (!response.ok) {
-        throw new Error(`Failed to fetch user: ${response.statusText}`);
-    }
-    
-    const userData = await response.json();
-    
-    // No longer setting userId in state - we only want to do that at login
-    // The commented line is removed completely to avoid confusion
-    
-    // Convert backend response to GalleryResponse format
-    const targetUser: GalleryResponse = {
-    _id: userData._id,
-    username: userData.username,
-    cards: userData.cards || [],
-    friends: userData.friends || [],
-    pending_friends: userData.pending_friends || [],
-    profile_picture: userData.profile_picture || null
-    };
+        const currentUser = await fetchGalleryData();
+        const response = await fetch(`${BACKEND_URL}/db/findUsername/${username}`);
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch user: ${response.statusText}`);
+        }
+
+        const userData = await response.json();
+
+        // No longer setting userId in state - we only want to do that at login
+        // The commented line is removed completely to avoid confusion
+
+        // Convert backend response to GalleryResponse format
+        const targetUser: GalleryResponse = {
+            _id: userData._id,
+            username: userData.username,
+            cards: userData.cards || [],
+            friends: userData.friends || [],
+            pending_friends: userData.pending_friends || [],
+            profile_picture: userData.profile_picture || null
+        };
 
         // Check if a friend request already exists
         const existingRequest = targetUser.pending_friends.find(
@@ -427,27 +429,27 @@ export type FriendshipStatus = "friend" | "pending_outgoing" | "pending_incoming
 export async function checkFriendshipStatus(userId: string): Promise<FriendshipStatus> {
     try {
         const currentUser = await fetchGalleryData();
-        
+
         // Check if they're friends
         const isFriend = currentUser.friends.some(
             friendId => (typeof friendId === 'string' ? friendId : friendId.$oid) === userId
         );
         if (isFriend) return "friend";
-        
+
         // Check for outgoing friend request
         const isOutgoingRequest = currentUser.pending_friends.some(
             request => request.receiving === userId
         );
         if (isOutgoingRequest) return "pending_outgoing";
-        
+
         // Check for incoming friend request
         const isIncomingRequest = currentUser.pending_friends.some(
             request => request.sending === userId
         );
         if (isIncomingRequest) return "pending_incoming";
-        
+
         return "none";
-        
+
     } catch (error) {
         console.error('Error checking friendship status:', error);
         throw error;
