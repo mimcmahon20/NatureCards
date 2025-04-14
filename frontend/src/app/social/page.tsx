@@ -118,7 +118,7 @@ export default function Social() {
   );
 
   // Handle trade completion (accept/decline)
-  const handleTradeComplete = async (tradeId: string, status: 'accepted' | 'declined') => {
+  /*const handleTradeComplete = async (tradeId: string, status: 'accepted' | 'declined') => {
     try {
       const trade = tradeRequests.find(t => t._id === tradeId);
       if (!trade) {
@@ -160,7 +160,7 @@ export default function Social() {
         { variant: 'destructive' }
       );
     }
-  };
+  }; */
 
   // Handle friend request completion (accept/decline)
   const handleFriendRequestComplete = async (requestId: string, status: 'accepted' | 'declined') => {
@@ -284,7 +284,7 @@ export default function Social() {
               <TradeRequestBar 
                 key={trade_request._id} 
                 trade_request={trade_request} 
-                onTradeComplete={handleTradeComplete}
+                //onTradeComplete={handleTradeComplete}
               />
             ))}
           </div>

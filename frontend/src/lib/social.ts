@@ -1,4 +1,4 @@
-import { GalleryResponse, PendingFriend } from "@/types";
+import { GalleryResponse, PendingFriend, TradeRequest, Card } from "@/types";
 import { fetchGalleryData, fetchUserGalleryData, updateUserData } from "@/lib/gallery";
 import { fetchUserByUsername } from "@/lib/api-adapter";
 
@@ -20,23 +20,6 @@ export interface FriendRequest {
     profile_image: string;
     sending: string;
     receiving: string;
-}
-
-// NOTE: Not an MVP thing, but this can definitely be refactored
-// Just to hold sender/receiver card data.
-export interface TradeRequest {
-    _id: string; //Trade request ID
-    sender_id: string;
-    recipient_id: string;
-    sender_username: string;
-    recipient_username: string;
-    profile_image: string;
-
-    //SENDER card id
-    sender_card_id: string;
-
-    //RECIPIENT card id
-    recipient_card_id: string;
 }
 
 // Convert backend friend data to our Friend interface
@@ -131,7 +114,6 @@ export async function fetchTradeRequestData(): Promise<TradeRequest[]> {
             return [];
         }
 
-        // Trading array already contains the correct structure
         return currentUser.trading;
     } catch (error) {
         console.error("Error fetching trade request data:", error);
@@ -256,7 +238,7 @@ export const handleAcceptTrade = async (trade_request: TradeRequest): Promise<bo
                 senderCardWithNewOwner
             ],
             trading: currentUser.trading.filter(t => 
-                t.offeredCard.id !== trade_request.offeredCard.id
+                t.offeredCard.id !== trade_request.offeredCard.id && t.requestedCard.id !== trade_request.requestedCard.id
             )
         };
 
@@ -267,7 +249,7 @@ export const handleAcceptTrade = async (trade_request: TradeRequest): Promise<bo
                 recipientCardWithNewOwner
             ],
             trading: tradePartner.trading.filter(t => 
-                t.offeredCard.id !== trade_request.offeredCard.id
+                t.offeredCard.id !== trade_request.offeredCard.id && t.requestedCard.id !== trade_request.requestedCard.id
             )
         };
 
