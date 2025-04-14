@@ -4,11 +4,14 @@ import { useEffect, useState } from "react";
 import { 
   fetchFriendData, 
   fetchFriendRequestData, 
+  fetchTradeRequestData,
   Friend, 
   FriendRequest, 
   TradeRequest,
   handleAcceptFriend,
-  handleDeclineFriend 
+  handleDeclineFriend,
+  handleAcceptTrade,
+  handleDeclineTrade
 } from "@/lib/social";
 import { PendingFriend } from "@/types";
 import { FriendBar } from "@/components/FriendBar";
@@ -74,11 +77,22 @@ export default function Social() {
       }
     };
 
-    // Removed mock trade requests for now as we haven't implemented real trade data yet
-    setLoading(prev => ({ ...prev, tradeRequests: false }));
-    
+    const fetchTradeRequests = async () => {
+      try {
+        setLoading(prev => ({ ...prev, tradeRequests: true }));
+        const data = await fetchTradeRequestData();
+        setTradeRequests(data);
+        setLoading(prev => ({ ...prev, tradeRequests: false }));
+      } catch (err) {
+        console.error("Error fetching trade requests:", err);
+        setError(prev => ({ ...prev, tradeRequests: true }));
+        setLoading(prev => ({ ...prev, tradeRequests: false }));
+      }
+    };
+
     fetchFriends();
     fetchFriendRequests();
+    fetchTradeRequests();
   }, []);
 
   // Loading skeletons for each section
@@ -104,42 +118,47 @@ export default function Social() {
   );
 
   // Handle trade completion (accept/decline)
-  const handleTradeComplete = (tradeId: string, status: 'accepted' | 'declined') => {
-    console.log(`Trade ${tradeId} was ${status}`);
-    
-    // Find the trade request that was completed
-    const completedTrade = tradeRequests.find(trade => trade._id === tradeId);
-    
-    // Remove the completed trade from the list
-    setTradeRequests(prev => prev.filter(trade => trade._id !== tradeId));
-    
-    // Show an additional toast notification when the trade is removed from the list
-    if (completedTrade) {
-      const otherUsername = completedTrade.sender_id === "12345" 
-        ? completedTrade.recipient_username 
-        : completedTrade.sender_username;
-      
+  const handleTradeComplete = async (tradeId: string, status: 'accepted' | 'declined') => {
+    try {
+      const trade = tradeRequests.find(t => t._id === tradeId);
+      if (!trade) {
+        throw new Error('Trade request not found');
+      }
+
+      let success = false;
       if (status === 'accepted') {
-        toast.open(
-          <div>
-            <div className="font-medium">Trade Complete</div>
-            <div className="text-sm">
-              Your trade with {otherUsername} has been processed successfully.
-            </div>
-          </div>,
-          { variant: 'success', duration: 5000 }
-        );
+        success = await handleAcceptTrade(trade);
       } else {
+        success = await handleDeclineTrade(trade);
+      }
+
+      if (success) {
+        setTradeRequests(prev => prev.filter(t => t._id !== tradeId));
         toast.open(
           <div>
-            <div className="font-medium">Trade Declined</div>
+            <div className="font-medium">
+              Trade {status === 'accepted' ? 'Accepted' : 'Declined'}
+            </div>
             <div className="text-sm">
-              Your trade with {otherUsername} has been declined.
+              {status === 'accepted' 
+                ? `Trade with ${trade.sender_username} completed successfully.`
+                : `Trade with ${trade.sender_username} was declined.`}
             </div>
           </div>,
-          { variant: 'default', duration: 5000 }
+          { variant: status === 'accepted' ? 'success' : 'default' }
         );
       }
+    } catch (error) {
+      console.error('Error handling trade:', error);
+      toast.open(
+        <div>
+          <div className="font-medium">Error</div>
+          <div className="text-sm">
+            Failed to process trade request. Please try again.
+          </div>
+        </div>,
+        { variant: 'destructive' }
+      );
     }
   };
 

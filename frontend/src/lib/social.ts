@@ -22,6 +22,8 @@ export interface FriendRequest {
     receiving: string;
 }
 
+// NOTE: Not an MVP thing, but this can definitely be refactored
+// Just to hold sender/receiver card data.
 export interface TradeRequest {
     _id: string; //Trade request ID
     sender_id: string;
@@ -114,6 +116,25 @@ export async function fetchFriendRequestData(): Promise<FriendRequest[]> {
         return validResults;
     } catch (error) {
         console.error("Error fetching friend request data:", error);
+        return [];
+    }
+}
+
+// Fetch trade requests for the current user
+export async function fetchTradeRequestData(): Promise<TradeRequest[]> {
+    try {
+        const currentUser = await fetchGalleryData();
+        console.log("Current user data for trades:", currentUser);
+        
+        if (!currentUser?.trading || currentUser.trading.length === 0) {
+            console.log("No trade requests found");
+            return [];
+        }
+
+        // Trading array already contains the correct structure
+        return currentUser.trading;
+    } catch (error) {
+        console.error("Error fetching trade request data:", error);
         return [];
     }
 }
@@ -221,30 +242,33 @@ export const handleDeclineFriend = async (friend_id: string) => {
 export const handleAcceptTrade = async (trade_request: TradeRequest): Promise<boolean> => {
     try {
         const currentUser = await fetchGalleryData();
-        const tradePartner = await fetchUserGalleryData(trade_request.sender_id);
+        const tradePartner = await fetchUserGalleryData(trade_request.offeredCard.owner);
 
-        // Exchange cards between users
+        // Exchange card ownership
         const updatedCurrentUser = {
             ...currentUser,
             cards: currentUser.cards.map(card => 
-                card.id === trade_request.recipient_card_id 
-                    ? { ...card, owner: tradePartner._id }
-                    : card
-            ),
-            trading: currentUser.trading.filter(t => t.offeredCard.id !== trade_request.recipient_card_id)
+                card.id === trade_request.requestedCard.id ? 
+                    { ...card, owner: tradePartner._id } : card
+            ).concat([{ ...trade_request.offeredCard, owner: currentUser._id }])
+            .filter(card => card.id !== trade_request.requestedCard.id),
+            trading: currentUser.trading.filter(t => 
+                t.offeredCard.id !== trade_request.offeredCard.id
+            )
         };
 
         const updatedPartnerUser = {
             ...tradePartner,
             cards: tradePartner.cards.map(card =>
-                card.id === trade_request.sender_card_id
-                    ? { ...card, owner: currentUser._id }
-                    : card
-            ),
-            trading: tradePartner.trading.filter(t => t.offeredCard.id !== trade_request.sender_card_id)
+                card.id === trade_request.offeredCard.id ? 
+                    { ...card, owner: currentUser._id } : card
+            ).concat([{ ...trade_request.requestedCard, owner: tradePartner._id }])
+            .filter(card => card.id !== trade_request.offeredCard.id),
+            trading: tradePartner.trading.filter(t => 
+                t.offeredCard.id !== trade_request.offeredCard.id
+            )
         };
 
-        // Update both users in database
         await Promise.all([
             updateUserData(updatedCurrentUser),
             updateUserData(updatedPartnerUser)
@@ -257,24 +281,72 @@ export const handleAcceptTrade = async (trade_request: TradeRequest): Promise<bo
     }
 };
 
-export const handleDeclineTrade = async (trade_id: string): Promise<boolean> => {
+export const handleDeclineTrade = async (trade_request: TradeRequest): Promise<boolean> => {
     try {
         const currentUser = await fetchGalleryData();
+        const tradePartner = await fetchUserGalleryData(trade_request.offeredCard.owner);
 
-        // Remove trade from trading array
+        // Remove trade from both users' trading arrays
         const updatedCurrentUser = {
             ...currentUser,
-            trading: currentUser.trading.filter(t => t.offeredCard.id !== trade_id)
+            trading: currentUser.trading.filter(t => 
+                t.offeredCard.id !== trade_request.offeredCard.id
+            )
         };
 
-        // Update user in database
-        await updateUserData(updatedCurrentUser);
+        const updatedPartnerUser = {
+            ...tradePartner,
+            trading: tradePartner.trading.filter(t => 
+                t.offeredCard.id !== trade_request.offeredCard.id
+            )
+        };
+
+        await Promise.all([
+            updateUserData(updatedCurrentUser),
+            updateUserData(updatedPartnerUser)
+        ]);
+
         return true;
     } catch (error) {
         console.error('Error declining trade:', error);
         return false;
     }
 };
+
+export async function sendTradeRequest(offeredCard: Card, requestedCard: Card): Promise<boolean> {
+    try {
+        const currentUser = await fetchGalleryData();
+        const targetUser = await fetchUserGalleryData(requestedCard.owner);
+
+        // Create trade request object
+        const tradeRequest = {
+            offeredCard: offeredCard,
+            requestedCard: requestedCard
+        };
+
+        // Update both users with the new trade request
+        const updatedCurrentUser = {
+            ...currentUser,
+            trading: [...(currentUser.trading || []), tradeRequest]
+        };
+
+        const updatedTargetUser = {
+            ...targetUser,
+            trading: [...(targetUser.trading || []), tradeRequest]
+        };
+
+        // Update both users in database
+        await Promise.all([
+            updateUserData(updatedCurrentUser),
+            updateUserData(updatedTargetUser)
+        ]);
+
+        return true;
+    } catch (error) {
+        console.error('Error sending trade request:', error);
+        return false;
+    }
+}
 
 // Simulates sending a friend request to a user by username
 export async function sendFriendRequest(username: string): Promise<boolean> {

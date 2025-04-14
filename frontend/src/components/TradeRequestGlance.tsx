@@ -1,44 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Star, CheckCircle, XCircle, Loader2, ArrowLeft, ArrowRight } from "lucide-react";
-import { handleAcceptTrade, handleDeclineTrade, TradeRequest } from "@/lib/social";
+import { handleAcceptTrade, handleDeclineTrade } from "@/lib/social";
+import { fetchUserGalleryData, userState } from "@/lib/gallery";
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerClose, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { useToast } from '@/components/ui/toast';
-
-// Card interface matching CardDetailed structure
-interface CardData {
-  id: string;
-  name: string;
-  image: string;
-  rating: number;
-  rarity: "common" | "rare" | "epic" | "legendary";
-  commonName: string;
-  scientificName?: string;
-  family?: string;
-  funFact?: string;
-  timePosted?: string;
-  location?: string;
-  username?: string;
-}
+import { Card, TradeRequest } from "@/types";
 
 // Simplified props interface
 interface TradeRequestGlanceProps {
-  tradeRequest: {
-    id: string;
-    sender: {
-      id: string;
-      username: string;
-      card: CardData;
-    };
-    recipient: {
-      id: string;
-      username: string;
-      card: CardData;
-    };
-  };
+  tradeRequest: TradeRequest;
   onTradeComplete?: (tradeId: string, status: 'accepted' | 'declined') => void;
   isDisabled?: boolean;
 }
@@ -48,11 +22,42 @@ export function TradeRequestGlance({ tradeRequest, onTradeComplete, isDisabled }
   const [tradeActionLoading, setTradeActionLoading] = useState(false);
   const [tradeStatus, setTradeStatus] = useState<'pending' | 'accepted' | 'declined'>('pending');
   const [drawerOpen, setDrawerOpen] = useState(false);
-  // const [activeCardView, setActiveCardView] = useState<'sender' | 'recipient' | null>(null);
+  const [senderUsername, setSenderUsername] = useState("");
+  const [recipientUsername, setRecipientUsername] = useState("");
   const toast = useToast();
 
-  // Check if current user is the sender (using placeholder "12345" as user ID)
-  const isCurrentUserSender = tradeRequest.sender.id === "12345";
+  useEffect(() => {
+    const fetchUsernames = async () => {
+      try {
+        // Make sure we have valid cards in the trade request
+        if (!tradeRequest?.offeredCard || !tradeRequest?.requestedCard) {
+          console.error('Missing card data in trade request');
+          return;
+        }
+
+        const [senderData, recipientData] = await Promise.all([
+          fetchUserGalleryData(tradeRequest.offeredCard.owner),
+          fetchUserGalleryData(tradeRequest.requestedCard.owner)
+        ]);
+
+        setSenderUsername(senderData.username);
+        setRecipientUsername(recipientData.username);
+      } catch (error) {
+        console.error("Error fetching usernames:", error);
+      }
+    };
+
+    fetchUsernames();
+  }, [tradeRequest]);
+
+  // Modify validateTradeData to check for card data explicitly
+  const validateTradeData = () => {
+    const hasCards = tradeRequest?.offeredCard && tradeRequest?.requestedCard;
+    const hasUsernames = senderUsername && recipientUsername;
+    return hasCards && hasUsernames;
+  };
+
+  const isCurrentUserSender = userState.userId === tradeRequest?.offeredCard?.owner;
 
   // Determine colors based on rarity
   const getColors = (rarity: string) => {
@@ -101,18 +106,23 @@ export function TradeRequestGlance({ tradeRequest, onTradeComplete, isDisabled }
   };
 
   // Function to render a single card preview
-  const renderCardPreview = (cardData: CardData, side: 'sender' | 'recipient', username: string) => {
+  const renderCardPreview = (side: 'sender' | 'recipient') => {
+    const cardData = side === 'sender' ? tradeRequest?.offeredCard : tradeRequest?.requestedCard;
+    if (!cardData) {
+      return <div>Loading...</div>;
+    }
+
     const colors = getColors(cardData.rarity);
+    const displayUsername = side === 'sender' ? senderUsername : recipientUsername;
     return (
       <div className="flex flex-col items-center w-full">
         <p className="text-xs sm:text-sm font-medium mb-1 sm:mb-2 truncate max-w-[120px] sm:max-w-[160px] text-center">
           {isCurrentUserSender ? 
-            (side === 'sender' ? "Your Card" : `${username}'s Card`) :
-            (side === 'sender' ? `${username}'s Card` : "Your Card")}
+            (side === 'sender' ? "Your Card" : `${displayUsername}'s Card`) :
+            (side === 'sender' ? `${displayUsername}'s Card` : "Your Card")}
         </p>
         <div 
           className={`rounded-lg border-2 ${colors.border} overflow-hidden cursor-pointer hover:shadow-md transition-shadow shadow-lg w-[120px] sm:w-[160px]`}
-          // onClick={() => setActiveCardView(side)}
         >
           <div className={`p-1 sm:p-2 ${colors.border} ${colors.header}`}>
             <h3 className="text-sm font-semibold truncate">{cardData.commonName}</h3>
@@ -145,7 +155,6 @@ export function TradeRequestGlance({ tradeRequest, onTradeComplete, isDisabled }
     setDrawerOpen(true);
     setIsLoading(true);
     try {
-      // Additional card details could be fetched here if needed
       setIsLoading(false);
     } catch (error) {
       console.error("Error fetching card details:", error);
@@ -158,18 +167,10 @@ export function TradeRequestGlance({ tradeRequest, onTradeComplete, isDisabled }
     setTradeActionLoading(true);
     
     try {
-      const tradeRequestData: TradeRequest = {
-        _id: tradeRequest.id,
-        sender_id: tradeRequest.sender.id,
-        recipient_id: tradeRequest.recipient.id,
-        sender_username: tradeRequest.sender.username,
-        recipient_username: tradeRequest.recipient.username,
-        profile_image: '',
-        sender_card_id: tradeRequest.sender.card.id,
-        recipient_card_id: tradeRequest.recipient.card.id
-      };
-      
-      const success = await handleAcceptTrade(tradeRequestData);
+      const success = await handleAcceptTrade({
+        offeredCard: tradeRequest.offeredCard,
+        requestedCard: tradeRequest.requestedCard
+      });
       
       if (success) {
         setTradeStatus('accepted');
@@ -182,7 +183,7 @@ export function TradeRequestGlance({ tradeRequest, onTradeComplete, isDisabled }
         );
         
         if (onTradeComplete) {
-          onTradeComplete(tradeRequest.id, 'accepted');
+          onTradeComplete(tradeRequest._id, 'accepted');
         }
         
         setTimeout(() => setDrawerOpen(false), 1500);
@@ -208,7 +209,7 @@ export function TradeRequestGlance({ tradeRequest, onTradeComplete, isDisabled }
     setTradeActionLoading(true);
     
     try {
-      const success = await handleDeclineTrade(tradeRequest.id);
+      const success = await handleDeclineTrade(tradeRequest._id);
       
       if (success) {
         setTradeStatus('declined');
@@ -221,7 +222,7 @@ export function TradeRequestGlance({ tradeRequest, onTradeComplete, isDisabled }
         );
         
         if (onTradeComplete) {
-          onTradeComplete(tradeRequest.id, 'declined');
+          onTradeComplete(tradeRequest._id, 'declined');
         }
         
         setTimeout(() => setDrawerOpen(false), 1500);
@@ -241,6 +242,14 @@ export function TradeRequestGlance({ tradeRequest, onTradeComplete, isDisabled }
       setTradeActionLoading(false);
     }
   };
+
+  if (!validateTradeData()) {
+    return (
+      <Button variant="outline" size="sm" disabled>
+        Loading...
+      </Button>
+    );
+  }
 
   return (
     <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
@@ -265,20 +274,20 @@ export function TradeRequestGlance({ tradeRequest, onTradeComplete, isDisabled }
           ) : (
             <>
               <div className="grid grid-cols-[1fr,auto,1fr] items-center gap-1 sm:gap-4 mb-4 w-full place-items-center">
-                {renderCardPreview(tradeRequest.sender.card, 'sender', tradeRequest.sender.username)}
+                {renderCardPreview('sender')}
                 
                 <div className="flex flex-col gap-1 text-gray-400 px-1">
                   <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
                   <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
                 </div>
 
-                {renderCardPreview(tradeRequest.recipient.card, 'recipient', tradeRequest.recipient.username)}
+                {renderCardPreview('recipient')}
               </div>
 
               <p className="text-sm text-gray-500 mb-4 text-center">
                 {isCurrentUserSender 
-                  ? `You offered this trade to ${tradeRequest.recipient.username}`
-                  : `${tradeRequest.sender.username} offered this trade to you`}
+                  ? `You offered this trade to ${recipientUsername}`
+                  : `${senderUsername} offered this trade to you`}
               </p>
               
               {!isCurrentUserSender && tradeStatus === 'pending' && (

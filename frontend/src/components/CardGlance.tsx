@@ -13,6 +13,7 @@ import {
   DrawerContent,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import { sendTradeRequest } from "@/lib/social";
 
 // Interface for MongoDB documents that may include _id
 interface MongoDBDocument {
@@ -102,14 +103,20 @@ export function CardGlance({ card, disableDrawer }: CardGlanceProps) {
   };
 
   // Handle trade offer selection
-  const handleTradeOffer = (offeredCard: Card) => {
-    console.log("Trade request created:", {
-      sender: userState.userId,
-      recipient: card.owner,
-      offeredCard: offeredCard.id,
-      requestedCard: card.id
-    });
-    setShowTradeDrawer(false);
+  const handleTradeOffer = async (offeredCard: Card) => {
+    try {
+      const success = await sendTradeRequest(offeredCard, card);
+      
+      if (success) {
+        console.log(`Trade request for ${card.commonName} has been sent successfully.`);
+      } else {
+        console.error("Failed to send trade request. Please try again.");
+      }
+      
+      setShowTradeDrawer(false);
+    } catch (error) {
+      console.error("Error sending trade request:", error);
+    }
   };
 
   return (

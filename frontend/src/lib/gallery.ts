@@ -75,7 +75,8 @@ export async function fetchUserGalleryData(userId: string): Promise<GalleryRespo
       cards: userData.cards || [],
       friends: userData.friends || [],
       pending_friends: userData.pending_friends || [],
-      profile_picture: userData.profile_picture || null
+      profile_picture: userData.profile_picture || null,
+      trading: userData.trading || [] // Add trading array
     };
     
     return galleryResponse;
@@ -214,7 +215,8 @@ export async function createUser(userData: { username: string, email: string, pa
     const galleryResponse: GalleryResponse = {
       _id: newUserData._id,
       username: newUserData.username,
-      cards: newUserData.cards || []
+      cards: newUserData.cards || [],
+      trading: newUserData.trading || [] // Add trading array
     };
     
     return galleryResponse;

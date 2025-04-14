@@ -1,27 +1,12 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { TradeRequest } from "@/lib/social";
+import { Card, TradeRequest } from "@/types";
+import { Card as CardComponent, CardContent } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { TradeRequestGlance } from "./TradeRequestGlance";
 import { Skeleton } from "@/components/ui/skeleton";
-import { mockFetchCardDetails } from "@/lib/mock-trade-data";
-
-// Card interface matching the structure used in CardDetailed
-interface CardData {
-  id: string;
-  name: string;
-  image: string;
-  rating: number;
-  rarity: "common" | "rare" | "epic" | "legendary";
-  commonName: string;
-  scientificName?: string;
-  family?: string;
-  funFact?: string;
-  timePosted?: string;
-  location?: string;
-  username?: string;
-}
+import { fetchUserGalleryData } from "@/lib/gallery";
+import { Button } from "@/components/ui/button";
 
 interface TradeRequestBarProps {
   trade_request: TradeRequest;
@@ -29,11 +14,10 @@ interface TradeRequestBarProps {
 }
 
 export function TradeRequestBar({ trade_request, onTradeComplete }: TradeRequestBarProps) {
-  const [senderCard, setSenderCard] = useState<CardData | null>(null);
-  const [recipientCard, setRecipientCard] = useState<CardData | null>(null);
+  const [senderCard, setSenderCard] = useState<Card | null>(null);
+  const [recipientCard, setRecipientCard] = useState<Card | null>(null);
   const [loading, setLoading] = useState(true);
-  // const [errorState, setErrorState] = useState(false);
-  
+
   // Convert database rarity to our component rarity type
   const convertRarity = (dbRarity: string): "common" | "rare" | "epic" | "legendary" => {
     switch(dbRarity) {
@@ -56,56 +40,68 @@ export function TradeRequestBar({ trade_request, onTradeComplete }: TradeRequest
       default: return 1;
     }
   };
-  
+
+  const validateTradeData = () => {
+    if (!trade_request?.offeredCard || !trade_request?.requestedCard) return false;
+    if (!senderCard || !recipientCard) return false;
+    return true;
+  };
+
   useEffect(() => {
-    const loadCardDetails = async () => {
+    const fetchCardDetails = async () => {
       try {
-        // Fetch sender card details
-        const senderCardData = await mockFetchCardDetails(trade_request.sender_card_id);
-        if (senderCardData) {
-          setSenderCard({
-            id: senderCardData.id || trade_request.sender_card_id,
-            name: senderCardData.commonName,
-            image: senderCardData.image || "/placeholder.svg",
-            rating: getRarityStars(convertRarity(senderCardData.rarity)),
-            rarity: convertRarity(senderCardData.rarity),
-            commonName: senderCardData.commonName,
-            // Add other optional fields if available
-            scientificName: senderCardData.scientificName,
-            family: senderCardData.family,
-          });
-        }
+        setLoading(true);
         
-        // Fetch recipient card details
-        const recipientCardData = await mockFetchCardDetails(trade_request.recipient_card_id);
-        if (recipientCardData) {
-          setRecipientCard({
-            id: recipientCardData.id || trade_request.recipient_card_id,
-            name: recipientCardData.commonName,
-            image: recipientCardData.image || "/placeholder.svg",
-            rating: getRarityStars(convertRarity(recipientCardData.rarity)),
-            rarity: convertRarity(recipientCardData.rarity),
-            commonName: recipientCardData.commonName,
-            // Add other optional fields if available
-            scientificName: recipientCardData.scientificName,
-            family: recipientCardData.family,
-          });
+        if (!trade_request?.offeredCard?.owner || !trade_request?.requestedCard?.owner) {
+          console.log('Waiting for card ownership data...');
+          return;
         }
-        
-        setLoading(false);
+
+        // Fetch users' data based on card ownership
+        const [senderData, recipientData] = await Promise.all([
+          fetchUserGalleryData(trade_request.offeredCard.owner),
+          fetchUserGalleryData(trade_request.requestedCard.owner)
+        ]);
+
+        // Convert offered card
+        setSenderCard({
+          id: trade_request.offeredCard.id,
+          name: trade_request.offeredCard.commonName,
+          image: trade_request.offeredCard.image,
+          rating: getRarityStars(convertRarity(trade_request.offeredCard.rarity)),
+          rarity: convertRarity(trade_request.offeredCard.rarity),
+          commonName: trade_request.offeredCard.commonName,
+          scientificName: trade_request.offeredCard.scientificName,
+          family: trade_request.offeredCard.family,
+          username: senderData.username // Set username from gallery data
+        });
+
+        // Convert requested card
+        setRecipientCard({
+          id: trade_request.requestedCard.id,
+          name: trade_request.requestedCard.commonName,
+          image: trade_request.requestedCard.image,
+          rating: getRarityStars(convertRarity(trade_request.requestedCard.rarity)),
+          rarity: convertRarity(trade_request.requestedCard.rarity),
+          commonName: trade_request.requestedCard.commonName,
+          scientificName: trade_request.requestedCard.scientificName,
+          family: trade_request.requestedCard.family,
+          username: recipientData.username // Set username from gallery data
+        });
+
       } catch (err) {
         console.error("Error loading card details:", err);
-        // setErrorState(true);
+      } finally {
         setLoading(false);
       }
     };
-    
-    loadCardDetails();
-  }, [trade_request.sender_card_id, trade_request.recipient_card_id]);
 
-// Handle when a trade is completed (accepted or declined)
+    fetchCardDetails();
+  }, [trade_request]);
+
+  // Handle when a trade is completed (accepted or declined)
   const handleTradeComplete = (tradeId: string, status: 'accepted' | 'declined') => {
-console.log(`Trade ${tradeId} was ${status}`);
+    console.log(`Trade ${tradeId} was ${status}`);
     
     // Call the parent component's callback if provided
     if (onTradeComplete) {
@@ -113,8 +109,11 @@ console.log(`Trade ${tradeId} was ${status}`);
     }
   };
 
+  // Update render check
+  const canRenderGlance = validateTradeData();
+
   return (
-    <Card className="overflow-hidden">
+    <CardComponent className="overflow-hidden">
       <div className="flex flex-col sm:flex-row">
         <div className="flex-1 p-4">
           <CardContent className="p-0">
@@ -126,57 +125,30 @@ console.log(`Trade ${tradeId} was ${status}`);
             ) : (
               <>
                 <p className="font-medium">
-                  Trading <span className="text-green-600">{senderCard?.commonName || "Unknown Card"}</span> for{" "}
-                  <span className="text-blue-600">{recipientCard?.commonName || "Unknown Card"}</span>
+                  Trading <span className="text-green-600">{senderCard?.commonName || "Unknown Card"}</span> from{" "}
+                  <span className="font-semibold">{senderCard?.username || "Unknown User"}</span> for{" "}
+                  <span className="text-blue-600">{recipientCard?.commonName || "Unknown Card"}</span> from{" "}
+                  <span className="font-semibold">{recipientCard?.username || "Unknown User"}</span>
                 </p>
-                {trade_request.sender_id === "12345" ? (
-                  <p className="text-sm text-gray-500">
-                    You offered this trade to {trade_request.recipient_username}
-                  </p>
-                ) : (
-                  <p className="text-sm text-gray-500">
-                    {trade_request.sender_username} offered this trade to you
-                  </p>
-                )}
               </>
             )}
           </CardContent>
         </div>
-        
+
         <div className="flex items-center justify-end p-4 bg-gray-50 border-t sm:border-t-0 sm:border-l">
-          <TradeRequestGlance
-            tradeRequest={{
-              id: trade_request._id,
-              sender: {
-                id: trade_request.sender_id,
-                username: trade_request.sender_username,
-                card: senderCard || {
-                  id: trade_request.sender_card_id,
-                  name: "Unknown Card",
-                  image: "/placeholder.svg",
-                  rating: 1,
-                  rarity: "common",
-                  commonName: "Unknown Card"
-                }
-              },
-              recipient: {
-                id: trade_request.recipient_id,
-                username: trade_request.recipient_username,
-                card: recipientCard || {
-                  id: trade_request.recipient_card_id,
-                  name: "Unknown Card",
-                  image: "/placeholder.svg",
-                  rating: 1,
-                  rarity: "common",
-                  commonName: "Unknown Card"
-                }
-              }
-            }}
-            onTradeComplete={handleTradeComplete}
-            isDisabled={loading}
-          />
+          {canRenderGlance ? (
+            <TradeRequestGlance
+              tradeRequest={trade_request} // Pass the normalized trade request directly
+              onTradeComplete={handleTradeComplete}
+              isDisabled={loading}
+            />
+          ) : (
+            <Button variant="outline" size="sm" disabled>
+              Loading...
+            </Button>
+          )}
         </div>
       </div>
-    </Card>
+    </CardComponent>
   );
 }

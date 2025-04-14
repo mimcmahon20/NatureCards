@@ -25,7 +25,7 @@ export interface PendingFriend {
   receiving: ObjectId;
 }
 
-// Trading request type
+// Trading request type - simplified to just contain the two cards
 export interface TradeRequest {
   offeredCard: Card;
   requestedCard: Card;
@@ -50,6 +50,7 @@ export interface GalleryResponse {
   pending_friends?: PendingFriend[]; // Changed from string[] to PendingFriend[]
   friends?: ObjectId[]; // Using ObjectId type for consistency
   profile_picture?: string; // Optional profile picture URL
+  trading?: TradeRequest[]; // Add trading array to match MongoDB structure
 }
 
 // Feed user type
