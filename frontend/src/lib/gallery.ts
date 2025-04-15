@@ -176,7 +176,8 @@ export async function updateUserData(userData: Partial<GalleryResponse>): Promis
       _id: updatedUserData._id,
       username: updatedUserData.username,
       cards: updatedUserData.cards || [],
-      friends: updatedUserData.friends || []
+      friends: updatedUserData.friends || [],
+      trading: updatedUserData.trading || [], // Add trading array
     };
     
     return galleryResponse;
