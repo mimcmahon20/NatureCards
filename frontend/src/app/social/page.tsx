@@ -279,6 +279,7 @@ export default function Social() {
           <div className="space-y-4">
             {tradeRequests.map((trade_request) => (
               <TradeRequestBar
+                key=""
                 trade_request={trade_request} 
                 //onTradeComplete={handleTradeComplete}
               />
