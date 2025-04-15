@@ -13,7 +13,7 @@ import { TradeRequest } from "@/types/index";
 // Simplified props interface
 interface TradeRequestGlanceProps {
   tradeRequest: TradeRequest;
-  onTradeComplete?: (tradeId: string, status: 'accepted' | 'declined') => void;
+  onTradeComplete?: (status: 'accepted' | 'declined') => void;
   isDisabled?: boolean;
 }
 
@@ -195,7 +195,7 @@ export function TradeRequestGlance({ tradeRequest, onTradeComplete, isDisabled }
         );
         
         if (onTradeComplete) {
-          onTradeComplete(tradeRequest._id, 'accepted');
+          onTradeComplete('accepted');
         }
         
         setTimeout(() => setDrawerOpen(false), 1500);
@@ -234,7 +234,7 @@ export function TradeRequestGlance({ tradeRequest, onTradeComplete, isDisabled }
         );
         
         if (onTradeComplete) {
-          onTradeComplete(tradeRequest._id, 'declined');
+          onTradeComplete('declined');
         }
         
         setTimeout(() => setDrawerOpen(false), 1500);

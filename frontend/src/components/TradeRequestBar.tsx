@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 
 interface TradeRequestBarProps {
   trade_request: TradeRequest;
-  onTradeComplete?: (tradeId: string, status: 'accepted' | 'declined') => void;
+  onTradeComplete?: (status: 'accepted' | 'declined') => void;
 }
 
 export function TradeRequestBar({ trade_request, onTradeComplete }: TradeRequestBarProps) {
@@ -99,12 +99,11 @@ export function TradeRequestBar({ trade_request, onTradeComplete }: TradeRequest
   }, [trade_request]);
 
   // Handle when a trade is completed (accepted or declined)
-  const handleTradeComplete = (tradeId: string, status: 'accepted' | 'declined') => {
-    console.log(`Trade ${tradeId} was ${status}`);
+  const handleTradeComplete = (status: 'accepted' | 'declined') => {
+    // console.log(`Trade was ${status}`);
     
-    // Call the parent component's callback if provided
     if (onTradeComplete) {
-      onTradeComplete(tradeId, status);
+      onTradeComplete(status);
     }
   };
 

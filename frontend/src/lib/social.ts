@@ -35,7 +35,7 @@ async function processFriendData(userId: string): Promise<Friend> {
 export async function fetchFriendData(): Promise<Friend[]> {
     try {
         const currentUser = await fetchGalleryData();
-        const friendPromises = (currentUser.friends ?? []).map(friendId =>
+        const friendPromises = (currentUser.friends ?? []).map((friendId: string | { $oid: string }) =>
             processFriendData(typeof friendId === 'string' ? friendId : friendId.$oid)
         );
         return await Promise.all(friendPromises);
@@ -413,7 +413,7 @@ export async function checkFriendshipStatus(userId: string): Promise<FriendshipS
 
         // Check if they're friends
         const isFriend = (currentUser.friends ?? []).some(
-            friendId => (typeof friendId === 'string' ? friendId : friendId.$oid) === userId
+            (friendId: string | { $oid: string }) => (typeof friendId === 'string' ? friendId : friendId.$oid) === userId
         );
         if (isFriend) return "friend";
 
