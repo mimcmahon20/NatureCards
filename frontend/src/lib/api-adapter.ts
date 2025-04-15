@@ -5,7 +5,7 @@
  * It helps standardize data access across the application
  */
 
-import { Card, User, GalleryResponse, ObjectId } from '@/types';
+import { Card, User, GalleryResponse, ObjectId } from '@/types/index';
 import { getUserById as getMockUserById, getUserByUsername } from './mock-db';
 
 // Type for MongoDB ObjectId reference

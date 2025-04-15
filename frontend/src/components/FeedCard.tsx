@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { MapPin, Clock } from "lucide-react";
-import { CardPost, Card } from "@/types";
+import { CardPost, Card } from "@/types/index";
 import { CardGlance } from "./CardGlance";
 
 interface FeedCardProps {

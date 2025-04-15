@@ -1,5 +1,5 @@
 // Import types from the types directory
-import { CardPost, FeedResponse, Card, GalleryResponse, CardInPost } from '@/types';
+import { CardPost, FeedResponse, Card, GalleryResponse, CardInPost } from '@/types/index';
 import { userState, fetchUserGalleryData } from './gallery';
 
 // Helper function to convert a Card to CardInPost

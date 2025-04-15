@@ -20,7 +20,7 @@ import { CardDetailed } from "@/components/CardDetailed";
 import Image from "next/image";
 import { UploadButton } from "@/lib/utils";
 import { userState, updateUserData, fetchUserGalleryData } from "@/lib/gallery";
-import { Card as CardType } from "@/types";
+import { Card as CardType } from "@/types/index";
 
 // Define Friend type for UI
 type Friend = {
