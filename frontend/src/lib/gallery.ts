@@ -1,5 +1,5 @@
 // Import types from the types directory
-import { Card, GalleryResponse, SortOption } from '@/types';
+import { Card, GalleryResponse, SortOption } from '@/types/index';
 
 // Simple user state management
 interface UserState {

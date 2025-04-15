@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { Star } from "lucide-react";
-import { Card } from "@/types";
+import { Card } from "@/types/index";
 import { CardDetailed } from "./CardDetailed";
 import { Button } from "@/components/ui/button";
 import { userState, fetchGalleryData } from "@/lib/gallery";

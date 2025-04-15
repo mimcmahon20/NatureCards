@@ -6,14 +6,11 @@ import {
   fetchFriendRequestData, 
   fetchTradeRequestData,
   Friend, 
-  FriendRequest, 
-  TradeRequest,
+  FriendRequest,
   handleAcceptFriend,
-  handleDeclineFriend,
-  handleAcceptTrade,
-  handleDeclineTrade
+  handleDeclineFriend
 } from "@/lib/social";
-import { PendingFriend } from "@/types";
+import { TradeRequest } from "@/types/index";
 import { FriendBar } from "@/components/FriendBar";
 import { FriendRequestBar } from "@/components/FriendRequestBar";
 import { TradeRequestBar } from "@/components/TradeRequestBar";
@@ -281,8 +278,7 @@ export default function Social() {
         ) : tradeRequests.length > 0 ? (
           <div className="space-y-4">
             {tradeRequests.map((trade_request) => (
-              <TradeRequestBar 
-                key={trade_request._id} 
+              <TradeRequestBar
                 trade_request={trade_request} 
                 //onTradeComplete={handleTradeComplete}
               />

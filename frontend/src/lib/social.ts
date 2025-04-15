@@ -1,6 +1,5 @@
-import { GalleryResponse, PendingFriend, TradeRequest, Card } from "@/types";
+import { GalleryResponse, PendingFriend, TradeRequest, Card } from "@/types/index";
 import { fetchGalleryData, fetchUserGalleryData, updateUserData } from "@/lib/gallery";
-import { fetchUserByUsername } from "@/lib/api-adapter";
 
 // Get the backend URL from environment variables
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://nature-cards-e3f71dcee8d3.herokuapp.com';
@@ -36,7 +35,7 @@ async function processFriendData(userId: string): Promise<Friend> {
 export async function fetchFriendData(): Promise<Friend[]> {
     try {
         const currentUser = await fetchGalleryData();
-        const friendPromises = currentUser.friends.map(friendId =>
+        const friendPromises = (currentUser.friends ?? []).map(friendId =>
             processFriendData(typeof friendId === 'string' ? friendId : friendId.$oid)
         );
         return await Promise.all(friendPromises);
@@ -148,7 +147,7 @@ export const handleAcceptFriend = async (friend_id: string) => {
         const otherUser = await fetchUserGalleryData(friend_id);
 
         // Find the specific friend request
-        const friendRequest = currentUser.pending_friends.find(
+        const friendRequest = (currentUser.pending_friends ?? []).find(
             request => request.sending === friend_id
         );
 
@@ -160,7 +159,7 @@ export const handleAcceptFriend = async (friend_id: string) => {
         const updatedCurrentUser = {
             ...currentUser,
             friends: [...(currentUser.friends || []), friend_id],
-            pending_friends: currentUser.pending_friends.filter(
+            pending_friends: (currentUser.pending_friends ?? []).filter(
                 request => request.sending !== friend_id
             )
         };
@@ -169,7 +168,7 @@ export const handleAcceptFriend = async (friend_id: string) => {
         const updatedOtherUser = {
             ...otherUser,
             friends: [...(otherUser.friends || []), currentUser._id],
-            pending_friends: otherUser.pending_friends.filter(
+            pending_friends: (otherUser.pending_friends ?? []).filter(
                 request => !(request.sending === friend_id && request.receiving === currentUser._id)
             )
         };
@@ -195,7 +194,7 @@ export const handleDeclineFriend = async (friend_id: string) => {
         // Update current user's data
         const updatedCurrentUser = {
             ...currentUser,
-            pending_friends: currentUser.pending_friends.filter(
+            pending_friends: (currentUser.pending_friends ?? []).filter(
                 request => request.sending !== friend_id
             )
         };
@@ -203,7 +202,7 @@ export const handleDeclineFriend = async (friend_id: string) => {
         // Update other user's data - fix the filter condition to remove the request
         const updatedOtherUser = {
             ...otherUser,
-            pending_friends: otherUser.pending_friends.filter(
+            pending_friends: (otherUser.pending_friends ?? []).filter(
                 request => !(request.sending === friend_id && request.receiving === currentUser._id)
             )
         };
@@ -237,7 +236,7 @@ export const handleAcceptTrade = async (trade_request: TradeRequest): Promise<bo
                 ...currentUser.cards.filter(card => card.id !== trade_request.requestedCard.id),
                 senderCardWithNewOwner
             ],
-            trading: currentUser.trading.filter(t => 
+            trading: (currentUser.trading ?? []).filter(t => 
                 t.offeredCard.id !== trade_request.offeredCard.id && t.requestedCard.id !== trade_request.requestedCard.id
             )
         };
@@ -248,7 +247,7 @@ export const handleAcceptTrade = async (trade_request: TradeRequest): Promise<bo
                 ...tradePartner.cards.filter(card => card.id !== trade_request.offeredCard.id),
                 recipientCardWithNewOwner
             ],
-            trading: tradePartner.trading.filter(t => 
+            trading: (tradePartner.trading ?? []).filter(t => 
                 t.offeredCard.id !== trade_request.offeredCard.id && t.requestedCard.id !== trade_request.requestedCard.id
             )
         };
@@ -273,14 +272,14 @@ export const handleDeclineTrade = async (trade_request: TradeRequest): Promise<b
         // Remove trade from both users' trading arrays
         const updatedCurrentUser = {
             ...currentUser,
-            trading: currentUser.trading.filter(t =>
+            trading: (currentUser.trading ?? []).filter(t =>
                 t.offeredCard.id !== trade_request.offeredCard.id
             )
         };
 
         const updatedPartnerUser = {
             ...tradePartner,
-            trading: tradePartner.trading.filter(t =>
+            trading: (tradePartner.trading ?? []).filter(t =>
                 t.offeredCard.id !== trade_request.offeredCard.id
             )
         };
@@ -358,7 +357,7 @@ export async function sendFriendRequest(username: string): Promise<boolean> {
         };
 
         // Check if a friend request already exists
-        const existingRequest = targetUser.pending_friends.find(
+        const existingRequest = (targetUser.pending_friends ?? []).find(
             request => request.sending === currentUser._id || request.receiving === currentUser._id
         );
 
@@ -367,7 +366,7 @@ export async function sendFriendRequest(username: string): Promise<boolean> {
         }
 
         // Check if they're already friends
-        if (targetUser.friends.includes(currentUser._id)) {
+        if ((targetUser.friends ?? []).includes(currentUser._id)) {
             throw new Error('Already friends with this user');
         }
 
@@ -413,19 +412,19 @@ export async function checkFriendshipStatus(userId: string): Promise<FriendshipS
         const currentUser = await fetchGalleryData();
 
         // Check if they're friends
-        const isFriend = currentUser.friends.some(
+        const isFriend = (currentUser.friends ?? []).some(
             friendId => (typeof friendId === 'string' ? friendId : friendId.$oid) === userId
         );
         if (isFriend) return "friend";
 
         // Check for outgoing friend request
-        const isOutgoingRequest = currentUser.pending_friends.some(
+        const isOutgoingRequest = (currentUser.pending_friends ?? []).some(
             request => request.receiving === userId
         );
         if (isOutgoingRequest) return "pending_outgoing";
 
         // Check for incoming friend request
-        const isIncomingRequest = currentUser.pending_friends.some(
+        const isIncomingRequest = (currentUser.pending_friends ?? []).some(
             request => request.sending === userId
         );
         if (isIncomingRequest) return "pending_incoming";

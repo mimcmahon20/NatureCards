@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, TradeRequest } from "@/types";
+import { Card, TradeRequest } from "@/types/index";
 import { Card as CardComponent, CardContent } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { TradeRequestGlance } from "./TradeRequestGlance";
@@ -29,17 +29,6 @@ export function TradeRequestBar({ trade_request, onTradeComplete }: TradeRequest
       default: return "common";
     }
   };
-  
-  // Get star count for rarity visualization
-  const getRarityStars = (rarity: "common" | "rare" | "epic" | "legendary"): number => {
-    switch (rarity) {
-      case "legendary": return 4;
-      case "epic": return 3;
-      case "rare": return 2;
-      case "common":
-      default: return 1;
-    }
-  };
 
   const validateTradeData = () => {
     if (!trade_request?.offeredCard || !trade_request?.requestedCard) return false;
@@ -65,27 +54,37 @@ export function TradeRequestBar({ trade_request, onTradeComplete }: TradeRequest
 
         // Convert offered card
         setSenderCard({
-          id: trade_request.offeredCard.id,
-          name: trade_request.offeredCard.commonName,
-          image: trade_request.offeredCard.image,
-          rating: getRarityStars(convertRarity(trade_request.offeredCard.rarity)),
-          rarity: convertRarity(trade_request.offeredCard.rarity),
+          creator: trade_request.offeredCard.creator,
+          owner: trade_request.offeredCard.owner,
           commonName: trade_request.offeredCard.commonName,
           scientificName: trade_request.offeredCard.scientificName,
+          funFact: trade_request.offeredCard.funFact,
+          timeCreated: trade_request.offeredCard.timeCreated,
+          location: trade_request.offeredCard.location,
+          tradeStatus: trade_request.offeredCard.tradeStatus,
+          infoLink: trade_request.offeredCard.infoLink,
           family: trade_request.offeredCard.family,
+          image: trade_request.offeredCard.image,
+          id: trade_request.offeredCard.id,
+          rarity: convertRarity(trade_request.offeredCard.rarity),
           username: senderData.username // Set username from gallery data
         });
 
         // Convert requested card
         setRecipientCard({
-          id: trade_request.requestedCard.id,
-          name: trade_request.requestedCard.commonName,
-          image: trade_request.requestedCard.image,
-          rating: getRarityStars(convertRarity(trade_request.requestedCard.rarity)),
-          rarity: convertRarity(trade_request.requestedCard.rarity),
+          creator: trade_request.requestedCard.creator,
+          owner: trade_request.requestedCard.owner,
           commonName: trade_request.requestedCard.commonName,
           scientificName: trade_request.requestedCard.scientificName,
+          funFact: trade_request.requestedCard.funFact,
+          timeCreated: trade_request.requestedCard.timeCreated,
+          location: trade_request.requestedCard.location,
+          tradeStatus: trade_request.requestedCard.tradeStatus,
+          infoLink: trade_request.requestedCard.infoLink,
           family: trade_request.requestedCard.family,
+          image: trade_request.requestedCard.image,
+          id: trade_request.requestedCard.id,
+          rarity: convertRarity(trade_request.requestedCard.rarity),
           username: recipientData.username // Set username from gallery data
         });
 

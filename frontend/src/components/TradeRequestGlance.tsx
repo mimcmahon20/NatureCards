@@ -8,7 +8,7 @@ import { fetchUserGalleryData, userState } from "@/lib/gallery";
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerClose, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { useToast } from '@/components/ui/toast';
-import { Card, TradeRequest } from "@/types";
+import { TradeRequest } from "@/types/index";
 
 // Simplified props interface
 interface TradeRequestGlanceProps {
@@ -141,7 +141,7 @@ export function TradeRequestGlance({ tradeRequest, onTradeComplete, isDisabled }
               <Star
                 key={star}
                 className={`w-4 h-4 ${colors.star} ${
-                  star <= cardData.rating ? "fill-current" : "fill-transparent"
+                  star <= getRarityStars(cardData.rarity) ? "fill-current" : "fill-transparent"
                 }`}
               />
             ))}
@@ -149,6 +149,18 @@ export function TradeRequestGlance({ tradeRequest, onTradeComplete, isDisabled }
         </div>
       </div>
     );
+  };
+
+  // Get star count for rarity visualization
+  const getRarityStars = (rarity: "common" | "uncommon" | "rare" | "epic" | "legendary"): number => {
+    switch (rarity) {
+      case "legendary": return 4;
+      case "epic": return 3;
+      case "rare": return 2;
+      case "uncommon": return 2; // Assuming uncommon is treated as rare for star count. idek how tf uncommon snuck in the project but we're stuck with it now
+      case "common":
+      default: return 1;
+    }
   };
 
   const handleOpenDrawer = async () => {
@@ -209,7 +221,7 @@ export function TradeRequestGlance({ tradeRequest, onTradeComplete, isDisabled }
     setTradeActionLoading(true);
     
     try {
-      const success = await handleDeclineTrade(tradeRequest._id);
+      const success = await handleDeclineTrade(tradeRequest);
       
       if (success) {
         setTradeStatus('declined');
