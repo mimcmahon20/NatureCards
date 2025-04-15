@@ -1,5 +1,5 @@
 // Import types from the types directory
-import { Card, GalleryResponse, SortOption } from '@/types';
+import { Card, GalleryResponse, SortOption } from '@/types/index';
 
 // Simple user state management
 interface UserState {
@@ -73,7 +73,10 @@ export async function fetchUserGalleryData(userId: string): Promise<GalleryRespo
       _id: userData._id,
       username: userData.username,
       cards: userData.cards || [],
-      friends: userData.friends || []
+      friends: userData.friends || [],
+      pending_friends: userData.pending_friends || [],
+      profile_picture: userData.profile_picture || null,
+      trading: userData.trading || [] // Add trading array
     };
     
     return galleryResponse;
@@ -82,6 +85,7 @@ export async function fetchUserGalleryData(userId: string): Promise<GalleryRespo
     throw error;
   }
 }
+
 
 // Function to authenticate a user and set their ID in local storage
 export async function authenticateUser(userId: string): Promise<GalleryResponse> {
@@ -172,7 +176,8 @@ export async function updateUserData(userData: Partial<GalleryResponse>): Promis
       _id: updatedUserData._id,
       username: updatedUserData.username,
       cards: updatedUserData.cards || [],
-      friends: updatedUserData.friends || []
+      friends: updatedUserData.friends || [],
+      trading: updatedUserData.trading || [], // Add trading array
     };
     
     return galleryResponse;
@@ -211,7 +216,8 @@ export async function createUser(userData: { username: string, email: string, pa
     const galleryResponse: GalleryResponse = {
       _id: newUserData._id,
       username: newUserData.username,
-      cards: newUserData.cards || []
+      cards: newUserData.cards || [],
+      trading: newUserData.trading || [] // Add trading array
     };
     
     return galleryResponse;

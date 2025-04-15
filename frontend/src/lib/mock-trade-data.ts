@@ -1,4 +1,4 @@
-import { Card } from "@/types";
+import { Card } from "@/types/index";
 
 // Mock card data for testing the trade UI
 export const mockCards: Record<string, Card> = {

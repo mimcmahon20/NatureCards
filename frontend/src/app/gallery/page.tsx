@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { CardGlance } from "@/components/CardGlance";
-import { Card, SortOption } from "@/types";
+import { Card, SortOption } from "@/types/index";
 import { fetchGalleryData, fetchUserGalleryData, sortCards } from "@/lib/gallery";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";

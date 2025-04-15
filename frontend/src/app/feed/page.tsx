@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { FeedCard } from "@/components/FeedCard";
-import { CardPost } from "@/types";
+import { CardPost } from "@/types/index";
 import { fetchFeedData } from "@/lib/feed";
 import { FeedSkeleton } from "@/components/FeedSkeleton";
 import { userState } from "@/lib/gallery";

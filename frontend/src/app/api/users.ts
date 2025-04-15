@@ -4,7 +4,7 @@
  * These functions handle API calls to the backend for user data
  */
 
-import { User, Card, GalleryResponse, ObjectId } from '@/types';
+import { User, Card, GalleryResponse, ObjectId } from '@/types/index';
 import { convertUserFromDB, convertUserToGalleryResponse, convertCardToDB } from '@/lib/api-adapter';
 
 // Base API URL

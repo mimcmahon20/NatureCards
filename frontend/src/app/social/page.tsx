@@ -1,14 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchMockFriendData, fetchMockFriendRequestData, fetchMockTradeRequestData, Friend, FriendRequest, TradeRequest } from "@/lib/social";
+import { 
+  fetchFriendData, 
+  fetchFriendRequestData, 
+  fetchTradeRequestData,
+  Friend, 
+  FriendRequest,
+  handleAcceptFriend,
+  handleDeclineFriend
+} from "@/lib/social";
+import { TradeRequest } from "@/types/index";
 import { FriendBar } from "@/components/FriendBar";
 import { FriendRequestBar } from "@/components/FriendRequestBar";
 import { TradeRequestBar } from "@/components/TradeRequestBar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
 import { AddFriendModal } from "@/components/AddFriendModal";
-// import { Card, fetchCardDetails } from "@/lib/gallery";
 
 export default function Social() {
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -26,10 +34,19 @@ export default function Social() {
   });
   const toast = useToast();
 
+  const refreshFriendRequests = async () => {
+    try {
+      const data = await fetchFriendRequestData();
+      setFriendRequests(data);
+    } catch (err) {
+      console.error("Error refreshing friend requests:", err);
+    }
+  };
+
   useEffect(() => {
     const fetchFriends = async () => {
       try {
-        const data = await fetchMockFriendData();
+        const data = await fetchFriendData();
         setFriends(data);
         setLoading(prev => ({ ...prev, friends: false }));
       } catch (err) {
@@ -41,7 +58,13 @@ export default function Social() {
     
     const fetchFriendRequests = async () => {
       try {
-        const data = await fetchMockFriendRequestData();
+        console.log("Fetching friend requests..."); 
+        setLoading(prev => ({ ...prev, friendRequests: true }));
+        const data = await fetchFriendRequestData();
+        
+        console.log("Raw friend requests data:", data);
+        
+        // Simply pass through the data - processing is now handled in fetchFriendRequestData
         setFriendRequests(data);
         setLoading(prev => ({ ...prev, friendRequests: false }));
       } catch (err) {
@@ -50,10 +73,11 @@ export default function Social() {
         setLoading(prev => ({ ...prev, friendRequests: false }));
       }
     };
-    
+
     const fetchTradeRequests = async () => {
       try {
-        const data = await fetchMockTradeRequestData();
+        setLoading(prev => ({ ...prev, tradeRequests: true }));
+        const data = await fetchTradeRequestData();
         setTradeRequests(data);
         setLoading(prev => ({ ...prev, tradeRequests: false }));
       } catch (err) {
@@ -62,7 +86,7 @@ export default function Social() {
         setLoading(prev => ({ ...prev, tradeRequests: false }));
       }
     };
-    
+
     fetchFriends();
     fetchFriendRequests();
     fetchTradeRequests();
@@ -91,60 +115,90 @@ export default function Social() {
   );
 
   // Handle trade completion (accept/decline)
-  const handleTradeComplete = (tradeId: string, status: 'accepted' | 'declined') => {
-    console.log(`Trade ${tradeId} was ${status}`);
-    
-    // Find the trade request that was completed
-    const completedTrade = tradeRequests.find(trade => trade._id === tradeId);
-    
-    // Remove the completed trade from the list
-    setTradeRequests(prev => prev.filter(trade => trade._id !== tradeId));
-    
-    // Show an additional toast notification when the trade is removed from the list
-    if (completedTrade) {
-      const otherUsername = completedTrade.sender_id === "12345" 
-        ? completedTrade.recipient_username 
-        : completedTrade.sender_username;
-      
+  /*const handleTradeComplete = async (tradeId: string, status: 'accepted' | 'declined') => {
+    try {
+      const trade = tradeRequests.find(t => t._id === tradeId);
+      if (!trade) {
+        throw new Error('Trade request not found');
+      }
+
+      let success = false;
       if (status === 'accepted') {
-        toast.open(
-          <div>
-            <div className="font-medium">Trade Complete</div>
-            <div className="text-sm">
-              Your trade with {otherUsername} has been processed successfully.
-            </div>
-          </div>,
-          { variant: 'success', duration: 5000 }
-        );
+        success = await handleAcceptTrade(trade);
       } else {
+        success = await handleDeclineTrade(trade);
+      }
+
+      if (success) {
+        setTradeRequests(prev => prev.filter(t => t._id !== tradeId));
         toast.open(
           <div>
-            <div className="font-medium">Trade Declined</div>
+            <div className="font-medium">
+              Trade {status === 'accepted' ? 'Accepted' : 'Declined'}
+            </div>
             <div className="text-sm">
-              Your trade with {otherUsername} has been declined.
+              {status === 'accepted' 
+                ? `Trade with ${trade.sender_username} completed successfully.`
+                : `Trade with ${trade.sender_username} was declined.`}
             </div>
           </div>,
-          { variant: 'default', duration: 5000 }
+          { variant: status === 'accepted' ? 'success' : 'default' }
         );
       }
+    } catch (error) {
+      console.error('Error handling trade:', error);
+      toast.open(
+        <div>
+          <div className="font-medium">Error</div>
+          <div className="text-sm">
+            Failed to process trade request. Please try again.
+          </div>
+        </div>,
+        { variant: 'destructive' }
+      );
     }
-  };
+  }; */
 
   // Handle friend request completion (accept/decline)
-  const handleFriendRequestComplete = (requestId: string, status: 'accepted' | 'declined') => {
-    // Remove the completed request from the list
-    setFriendRequests(prev => prev.filter(request => request._id !== requestId));
-    
-    // If accepted, add the user to friends list
-    if (status === 'accepted') {
-      const completedRequest = friendRequests.find(request => request._id === requestId);
-      if (completedRequest) {
-        setFriends(prev => [...prev, {
-          _id: completedRequest._id,
-          username: completedRequest.username,
-          profile_image: completedRequest.profile_image
-        }]);
-      }
+  const handleFriendRequestComplete = async (requestId: string, status: 'accepted' | 'declined') => {
+    try {
+        // Find the full request data
+        const request = friendRequests.find(req => req._id === requestId);
+        
+        if (!request) {
+            console.error('Friend request not found:', requestId);
+            throw new Error('Friend request not found');
+        }
+
+        if (status === 'accepted') {
+            await handleAcceptFriend(request.sender_id);
+            
+            // Immediately update UI by adding the new friend to friends list
+            const newFriend: Friend = {
+                _id: request.sender_id,
+                username: request.username,
+                profile_image: request.profile_image
+            };
+            
+            setFriends(prev => [...prev, newFriend]);
+        } else {
+            await handleDeclineFriend(request.sender_id);
+        }
+        
+        // Remove the request from the requests list
+        setFriendRequests(prev => prev.filter(req => req._id !== requestId));
+        
+    } catch (error) {
+        console.error('Error handling friend request:', error);
+        toast.open(
+            <div>
+                <div className="font-medium">Error</div>
+                <div className="text-sm">
+                    Failed to process friend request. Please try again.
+                </div>
+            </div>,
+            { variant: 'destructive' }
+        );
     }
   };
 
@@ -154,7 +208,7 @@ export default function Social() {
       <div className="mb-12">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-xl font-bold">Friends</h1>
-          <AddFriendModal />
+          <AddFriendModal onRequestSent={refreshFriendRequests} />
         </div>
         
         {loading.friends ? (
@@ -193,7 +247,7 @@ export default function Social() {
           <div className="space-y-4">
             {friendRequests.map((friend_request) => (
               <FriendRequestBar 
-                key={friend_request._id} 
+                key={friend_request._id}
                 friend_request={friend_request}
                 onRequestComplete={handleFriendRequestComplete}
               />
@@ -224,10 +278,10 @@ export default function Social() {
         ) : tradeRequests.length > 0 ? (
           <div className="space-y-4">
             {tradeRequests.map((trade_request) => (
-              <TradeRequestBar 
-                key={trade_request._id} 
+              <TradeRequestBar
+                key=""
                 trade_request={trade_request} 
-                onTradeComplete={handleTradeComplete}
+                //onTradeComplete={handleTradeComplete}
               />
             ))}
           </div>

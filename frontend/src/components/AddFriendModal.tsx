@@ -11,12 +11,14 @@ interface AddFriendModalProps {
   buttonText?: string;
   buttonVariant?: "default" | "success" | "outline";
   targetUsername?: string;
+  onRequestSent?: () => void;  // Add this prop
 }
 
 export function AddFriendModal({ 
   buttonText = "Add Friend", 
   buttonVariant = "success",
-  targetUsername
+  targetUsername,
+  onRequestSent
 }: AddFriendModalProps) {
   const [username, setUsername] = useState(targetUsername || "");
   const [isLoading, setIsLoading] = useState(false);
@@ -27,56 +29,50 @@ export function AddFriendModal({
     e.preventDefault();
     
     if (!username.trim()) {
-      toast.open(
-        <div>
-          <div className="font-medium">Error</div>
-          <div className="text-sm">Please enter a username</div>
-        </div>,
-        { variant: "destructive", duration: 3000 }
-      );
-      return;
+        toast.open(
+            <div>
+                <div className="font-medium">Error</div>
+                <div className="text-sm">Please enter a username</div>
+            </div>,
+            { variant: "destructive", duration: 3000 }
+        );
+        return;
     }
     
     setIsLoading(true);
     
     try {
-      // Mock API call - in a real app, we'd use a proper API endpoint
-      const success = await sendFriendRequest(username);
-      
-      if (success) {
+        await sendFriendRequest(username);
+        
         toast.open(
-          <div>
-            <div className="font-medium">Friend Request Sent</div>
-            <div className="text-sm">
-              Your friend request to <span className="font-medium">{username}</span> has been sent!
-            </div>
-          </div>,
-          { variant: "success", duration: 5000 }
+            <div>
+                <div className="font-medium">Friend Request Sent</div>
+                <div className="text-sm">
+                    Your friend request to <span className="font-medium">{username}</span> has been sent!
+                </div>
+            </div>,
+            { variant: "success", duration: 5000 }
         );
         
         // Reset form and close modal
         setUsername("");
         setIsOpen(false);
-      } else {
-        toast.open(
-          <div>
-            <div className="font-medium">Error</div>
-            <div className="text-sm">Failed to send friend request. User may not exist.</div>
-          </div>,
-          { variant: "destructive", duration: 5000 }
-        );
-      }
+
+        // Add this line to refresh friend requests
+        if (onRequestSent) {
+            onRequestSent();
+        }
     } catch (error) {
-      console.error("Error sending friend request:", error);
-      toast.open(
-        <div>
-          <div className="font-medium">Error</div>
-          <div className="text-sm">Something went wrong. Please try again.</div>
-        </div>,
-        { variant: "destructive", duration: 5000 }
-      );
+        const errorMessage = error instanceof Error ? error.message : 'Failed to send friend request';
+        toast.open(
+            <div>
+                <div className="font-medium">Error</div>
+                <div className="text-sm">{errorMessage}</div>
+            </div>,
+            { variant: "destructive", duration: 5000 }
+        );
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
   };
 
@@ -141,4 +137,4 @@ export function AddFriendModal({
       </DialogContent>
     </Dialog>
   );
-} 
+}

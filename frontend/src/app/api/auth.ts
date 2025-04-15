@@ -4,7 +4,7 @@
  * Functions for handling user authentication
  */
 
-import { User } from '@/types';
+import { User } from '@/types/index';
 import { convertUserFromDB } from '@/lib/api-adapter';
 
 // Base API URL

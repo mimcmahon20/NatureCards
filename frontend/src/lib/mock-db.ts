@@ -5,7 +5,7 @@
  * Used for development and testing until the real backend is connected.
  */
 
-import { Card, User, ObjectId, PendingFriend, TradeRequest } from '@/types';
+import { Card, User, ObjectId, PendingFriend, TradeRequest } from '@/types/index';
 
 // Generate an ObjectId-like string
 export function generateMockId(): ObjectId {

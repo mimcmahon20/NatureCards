@@ -1,4 +1,8 @@
-import { GalleryResponse } from "@/types";
+import { GalleryResponse, PendingFriend, TradeRequest, Card } from "@/types/index";
+import { fetchGalleryData, fetchUserGalleryData, updateUserData } from "@/lib/gallery";
+
+// Get the backend URL from environment variables
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://nature-cards-e3f71dcee8d3.herokuapp.com';
 
 // Types for friend data. User id is used to fetch most other data
 export interface Friend {
@@ -7,129 +11,113 @@ export interface Friend {
     profile_image: string;
 }
 
-// Types for friend data. User id is used to fetch most other data
 export interface FriendRequest {
-    _id: string; //Friend request ID; matches sender id
+    _id: string;
     sender_id: string;
     recipient_id: string;
     username: string;
     profile_image: string;
+    sending: string;
+    receiving: string;
 }
 
-export interface TradeRequest {
-    _id: string; //Trade request ID
-    sender_id: string;
-    recipient_id: string;
-    sender_username: string;
-    recipient_username: string;
-    profile_image: string;
-
-    //SENDER card id
-    sender_card_id: string;
-
-    //RECIPIENT card id
-    recipient_card_id: string;
+// Convert backend friend data to our Friend interface
+async function processFriendData(userId: string): Promise<Friend> {
+    const userData = await fetchUserGalleryData(userId);
+    return {
+        _id: userData._id,
+        username: userData.username,
+        profile_image: userData.profile_picture || '/default-avatar.png'
+    };
 }
 
-//Mock data for friends. Friend mock user IDs should match with gallery mock user ids to test fetching gallery data
-const mockFriendData: Record<string, Friend> = {
-    //First user; nature_lover
-    "12345": {
-        "_id": "12345",
-        "username": "Nature Lover",
-        "profile_image": "https://hips.hearstapps.com/hmg-prod/images/close-up-of-blossoming-rose-flower-royalty-free-image-1580853844.jpg?crop=0.668xw:1.00xh;0.248xw,0&resize=980:*"
-    },
-    //Second user; forest_explorer
-    "67890": {
-        "_id": "67890",
-        "username": "Forest Explorer",
-        "profile_image": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/Wild_red_fox_%28Vulpes_vulpes%29.jpg/800px-Wild_red_fox_%28Vulpes_vulpes%29.jpg"
-    },
-    //Third user; butterfly_collector
-    "24680": {
-        "_id": "24680",
-        "username": "Butterfly Collector",
-        "profile_image": "https://www.nationalgeographic.com/content/dam/animals/thumbs/rights-exempt/invertebrates/b/butterfly_thumb.ngsversion.1485813662680.adapt.1900.1.jpg"
+// Fetch real friend data from backend
+export async function fetchFriendData(): Promise<Friend[]> {
+    try {
+        const currentUser = await fetchGalleryData();
+        const friendPromises = (currentUser.friends ?? []).map((friendId: string | { $oid: string }) =>
+            processFriendData(typeof friendId === 'string' ? friendId : friendId.$oid)
+        );
+        return await Promise.all(friendPromises);
+    } catch (error) {
+        console.error("Error fetching friend data:", error);
+        return [];
     }
 }
 
-//Mock friend request data. 
-//From backend, the objects will be pairs of mongo_ids; first ID is ALWAYS the sender and second ID is ALWAYS the receiver
-const mockFriendRequestData: Record<string, FriendRequest> = {
-    //First user; forest_explorer TO user
-    "67890": {
-        "_id": "67890",
-        "sender_id": "67890",
-        "recipient_id": "12345",
-        "username": "Forest Explorer",
-        "profile_image": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/Wild_red_fox_%28Vulpes_vulpes%29.jpg/800px-Wild_red_fox_%28Vulpes_vulpes%29.jpg"
-    },
-    //Second user; moth_photographer. Test if THIS user sent the request.
-    "24680": {
-        "_id": "24680",
-        "sender_id": "12345",
-        "recipient_id": "23405",
-        "username": "Moth Photographer",
-        "profile_image": "https://blog.nature.org/wp-content/uploads/2018/10/Rosy-Maple-Moth-by-Ken-Childs-2-near-Henderson-TN.jpg"
+// Fetch this user's friend request data from backend
+export async function fetchFriendRequestData(): Promise<FriendRequest[]> {
+    try {
+        const currentUser = await fetchGalleryData();
+        console.log("Current user data:", currentUser);
+
+        if (!currentUser?.pending_friends) {
+            console.log("No pending friends found");
+            return [];
+        }
+
+        // Process friend requests by mapping friend request objects
+        const pendingFriendsArray = currentUser.pending_friends.map(request => {
+            if (!request?.sending || !request?.receiving) {
+                console.error('Invalid request structure:', request);
+                return null;
+            }
+            return request;
+        }).filter((request): request is PendingFriend => request !== null);
+
+        console.log("Structured pending friends:", pendingFriendsArray);
+
+        const requestPromises = pendingFriendsArray.map(async (request) => {
+            try {
+                // note that request.sending and request.receiving represent user IDs
+                const otherUserId = request.sending === currentUser._id ?
+                    request.receiving : request.sending;
+
+                console.log(`Fetching data for user ${otherUserId}`);
+                const otherUserData = await fetchUserGalleryData(otherUserId);
+
+                return {
+                    _id: request.sending,
+                    sender_id: request.sending,
+                    recipient_id: request.receiving,
+                    username: otherUserData.username,
+                    profile_image: otherUserData.profile_picture || '/default-avatar.png',
+                    sending: request.sending,
+                    receiving: request.receiving
+                };
+            } catch (err) {
+                console.error('Error processing friend request:', err);
+                return null;
+            }
+        });
+
+        const results = await Promise.all(requestPromises);
+        const validResults = results.filter((req): req is FriendRequest => req !== null);
+        console.log("Final processed friend requests:", validResults);
+
+        return validResults;
+    } catch (error) {
+        console.error("Error fetching friend request data:", error);
+        return [];
     }
 }
 
-//Mock trade request data.
-//From backend, the objects will be pairs of mongo_ids; first ID is ALWAYS the sender id and second ID is ALWAYS the receiver id
-const mockTradeRequestData: Record<string, TradeRequest> = {
-    //First: Trade with forest_explorer's sample card, received by user.
-    "test1": {
-        "_id": "test1",
-        "sender_id": "67890",
-        "recipient_id": "12345",
-        "sender_username": "Forest Explorer",
-        "recipient_username": "You",
-        "profile_image": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/Wild_red_fox_%28Vulpes_vulpes%29.jpg/800px-Wild_red_fox_%28Vulpes_vulpes%29.jpg",
+// Fetch trade requests for the current user
+export async function fetchTradeRequestData(): Promise<TradeRequest[]> {
+    try {
+        const currentUser = await fetchGalleryData();
+        console.log("Current user data for trades:", currentUser);
 
-        //TODO: fetchCardDetails call to get actual card details from card ID
-        "sender_card_id": "card-6",
-        "recipient_card_id": "card-1"
-    },
-    //Second, Trade with butterfly_collector's sample card, SENT by user.
-    "test2": {
-        "_id": "test2",
-        "sender_id": "12345",
-        "recipient_id": "24680",
-        "sender_username": "You",
-        "recipient_username": "Butterfly Collector",
-        "profile_image": "https://blog.nature.org/wp-content/uploads/2018/10/Rosy-Maple-Moth-by-Ken-Childs-2-near-Henderson-TN.jpg",
+        if (!currentUser?.trading || currentUser.trading.length === 0) {
+            console.log("No trade requests found");
+            return [];
+        }
 
-        //TODO: fetchCardDetails call to get actual card details from card ID
-        "sender_card_id": "card-2",
-        "recipient_card_id": "card-9"
+        return currentUser.trading;
+    } catch (error) {
+        console.error("Error fetching trade request data:", error);
+        return [];
     }
-}
-
-//Simulate get of a list of all of the mock friends (AKA default user fetch)
-export async function fetchMockFriendData(): Promise<Friend[]> {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve(Object.values(mockFriendData));
-        }, 1000);
-    });
-}
-
-//Simulate get of a list of all of the mock friend friend requests (AKA default user fetch)
-export async function fetchMockFriendRequestData(): Promise<FriendRequest[]> {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve(Object.values(mockFriendRequestData));
-        }, 1000);
-    });
-}
-
-//Simulate get of a list of all of the mock trade requests (AKA default user fetch)
-export async function fetchMockTradeRequestData(): Promise<TradeRequest[]> {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve(Object.values(mockTradeRequestData));
-        }, 1000);
-    });
 }
 
 //Get a URL representing the user's gallery. Fetched using the passed in user's ID.
@@ -151,56 +139,301 @@ export const handleTradeRequestClick = (trade_id: string) => {
 }
 
 // Accept friend request ONLY if this user is the recipient. This logic
-// should not be handled by the user who sent the request.
-export const handleAcceptFriend = (friend_id: string) => {
-    console.log("Accept friend request logic here");
+// should not be handled by the user who sent the request, but check isn't necessary here;
+// Conditional on friend request bar should block the sender from accepting/declining request.
+export const handleAcceptFriend = async (friend_id: string) => {
+    try {
+        const currentUser = await fetchGalleryData();
+        const otherUser = await fetchUserGalleryData(friend_id);
 
-    //Move pending friend from friend request to friend array for both users
-    mockFriendData[friend_id] = {
-        "_id": friend_id,
-        "username": mockFriendRequestData[friend_id].username,
-        "profile_image": mockFriendRequestData[friend_id].profile_image
+        // Find the specific friend request
+        const friendRequest = (currentUser.pending_friends ?? []).find(
+            request => request.sending === friend_id
+        );
+
+        if (!friendRequest) {
+            throw new Error('Friend request not found');
+        }
+
+        // Update current user's data
+        const updatedCurrentUser = {
+            ...currentUser,
+            friends: [...(currentUser.friends || []), friend_id],
+            pending_friends: (currentUser.pending_friends ?? []).filter(
+                request => request.sending !== friend_id
+            )
+        };
+
+        // Update other user's data
+        const updatedOtherUser = {
+            ...otherUser,
+            friends: [...(otherUser.friends || []), currentUser._id],
+            pending_friends: (otherUser.pending_friends ?? []).filter(
+                request => !(request.sending === friend_id && request.receiving === currentUser._id)
+            )
+        };
+
+        // Update both users in database
+        await Promise.all([
+            updateUserData(updatedCurrentUser),
+            updateUserData(updatedOtherUser)
+        ]);
+
+    } catch (error) {
+        console.error("Error accepting friend request:", error);
+        throw error;
     }
-    delete mockFriendRequestData[friend_id];
-
-    // TODO: This user's data is handled, but we need to send this user's friend 
-    // request accept to the user who sent it & update their database.
-    // Probably can only be handled once backend is connected.
-
-}
+};
 
 //Decline friend request from sender. Simply removes friend request data from both users.
-export const handleDeclineFriend = (friend_id: string) => {
-    console.log("Decline friend request logic here");
+export const handleDeclineFriend = async (friend_id: string) => {
+    try {
+        const currentUser = await fetchGalleryData();
+        const otherUser = await fetchUserGalleryData(friend_id);
 
-    //Remove pending friend from friend request array
-    delete mockFriendRequestData[friend_id];
+        // Update current user's data
+        const updatedCurrentUser = {
+            ...currentUser,
+            pending_friends: (currentUser.pending_friends ?? []).filter(
+                request => request.sending !== friend_id
+            )
+        };
 
-    //TODO: Remove pending friend from friend request array of the sender
-    //Again, only possible once backend is connected.
-}
+        // Update other user's data - fix the filter condition to remove the request
+        const updatedOtherUser = {
+            ...otherUser,
+            pending_friends: (otherUser.pending_friends ?? []).filter(
+                request => !(request.sending === friend_id && request.receiving === currentUser._id)
+            )
+        };
+
+        // Update both users in database
+        await Promise.all([
+            updateUserData(updatedCurrentUser),
+            updateUserData(updatedOtherUser)
+        ]);
+
+    } catch (error) {
+        console.error("Error declining friend request:", error);
+        throw error;
+    }
+};
 
 //Handled when trade recipient accepts trade request, exchanging card data between sender and recipient
 export const handleAcceptTrade = async (trade_request: TradeRequest): Promise<boolean> => {
-    console.log("Accepting trade request:", trade_request);
-    
     try {
-        // In a real implementation, this would make an API call to accept the trade
-        // For mock purposes, we'll simulate a successful trade
-        
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Remove the trade request from our mock data
-        if (mockTradeRequestData[trade_request._id]) {
-            delete mockTradeRequestData[trade_request._id];
-        }
-        
-        console.log("Trade accepted successfully");
+        const currentUser = await fetchGalleryData();
+        const tradePartner = await fetchUserGalleryData(trade_request.offeredCard.owner);
+
+        // Create the exchanged card objects with updated ownership
+        const senderCardWithNewOwner = { ...trade_request.offeredCard, owner: currentUser._id };
+        const recipientCardWithNewOwner = { ...trade_request.requestedCard, owner: tradePartner._id };
+
+        // Exchange card ownership
+        const updatedCurrentUser = {
+            ...currentUser,
+            cards: [
+                ...currentUser.cards.filter(card => card.id !== trade_request.requestedCard.id),
+                senderCardWithNewOwner
+            ],
+            trading: (currentUser.trading ?? []).filter(t => 
+                t.offeredCard.id !== trade_request.offeredCard.id && t.requestedCard.id !== trade_request.requestedCard.id
+            )
+        };
+
+        const updatedPartnerUser = {
+            ...tradePartner,
+            cards: [
+                ...tradePartner.cards.filter(card => card.id !== trade_request.offeredCard.id),
+                recipientCardWithNewOwner
+            ],
+            trading: (tradePartner.trading ?? []).filter(t => 
+                t.offeredCard.id !== trade_request.offeredCard.id && t.requestedCard.id !== trade_request.requestedCard.id
+            )
+        };
+
+        await Promise.all([
+            updateUserData(updatedCurrentUser),
+            updateUserData(updatedPartnerUser)
+        ]);
+
         return true;
     } catch (error) {
-        console.error("Error accepting trade:", error);
+        console.error('Error accepting trade:', error);
         return false;
+    }
+};
+
+export const handleDeclineTrade = async (trade_request: TradeRequest): Promise<boolean> => {
+    try {
+        const currentUser = await fetchGalleryData();
+        const tradePartner = await fetchUserGalleryData(trade_request.offeredCard.owner);
+
+        // Remove trade from both users' trading arrays
+        const updatedCurrentUser = {
+            ...currentUser,
+            trading: (currentUser.trading ?? []).filter(t =>
+                t.offeredCard.id !== trade_request.offeredCard.id
+            )
+        };
+
+        const updatedPartnerUser = {
+            ...tradePartner,
+            trading: (tradePartner.trading ?? []).filter(t =>
+                t.offeredCard.id !== trade_request.offeredCard.id
+            )
+        };
+
+        await Promise.all([
+            updateUserData(updatedCurrentUser),
+            updateUserData(updatedPartnerUser)
+        ]);
+
+        return true;
+    } catch (error) {
+        console.error('Error declining trade:', error);
+        return false;
+    }
+};
+
+export async function sendTradeRequest(offeredCard: Card, requestedCard: Card): Promise<boolean> {
+    try {
+        const currentUser = await fetchGalleryData();
+        const targetUser = await fetchUserGalleryData(requestedCard.owner);
+
+        // Create trade request object
+        const tradeRequest = {
+            offeredCard: offeredCard,
+            requestedCard: requestedCard
+        };
+
+        // Update both users with the new trade request
+        const updatedCurrentUser = {
+            ...currentUser,
+            trading: [...(currentUser.trading || []), tradeRequest]
+        };
+
+        const updatedTargetUser = {
+            ...targetUser,
+            trading: [...(targetUser.trading || []), tradeRequest]
+        };
+
+        // Update both users in database
+        await Promise.all([
+            updateUserData(updatedCurrentUser),
+            updateUserData(updatedTargetUser)
+        ]);
+
+        return true;
+    } catch (error) {
+        console.error('Error sending trade request:', error);
+        return false;
+    }
+}
+
+// Simulates sending a friend request to a user by username
+export async function sendFriendRequest(username: string): Promise<boolean> {
+    try {
+        const currentUser = await fetchGalleryData();
+        const response = await fetch(`${BACKEND_URL}/db/findUsername/${username}`);
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch user: ${response.statusText}`);
+        }
+
+        const userData = await response.json();
+
+        // No longer setting userId in state - we only want to do that at login
+        // The commented line is removed completely to avoid confusion
+
+        // Convert backend response to GalleryResponse format
+        const targetUser: GalleryResponse = {
+            _id: userData._id,
+            username: userData.username,
+            cards: userData.cards || [],
+            friends: userData.friends || [],
+            pending_friends: userData.pending_friends || [],
+            profile_picture: userData.profile_picture || null
+        };
+
+        // Check if a friend request already exists
+        const existingRequest = (targetUser.pending_friends ?? []).find(
+            request => request.sending === currentUser._id || request.receiving === currentUser._id
+        );
+
+        if (existingRequest) {
+            throw new Error('Friend request already exists');
+        }
+
+        // Check if they're already friends
+        if ((targetUser.friends ?? []).includes(currentUser._id)) {
+            throw new Error('Already friends with this user');
+        }
+
+        // Create friend request object
+        const friendRequest: PendingFriend = {
+            sending: currentUser._id,
+            receiving: targetUser._id
+        };
+
+        // Update both users' pending friends lists
+        const updatedCurrentUser = {
+            ...currentUser,
+            pending_friends: [...(currentUser.pending_friends || []), friendRequest]
+        };
+
+        const updatedTargetUser = {
+            _id: targetUser._id,
+            username: targetUser.username,
+            cards: targetUser.cards,
+            pending_friends: [...(targetUser.pending_friends || []), friendRequest],
+            friends: targetUser.friends
+        };
+
+        // Update both users in database
+        await Promise.all([
+            updateUserData(updatedCurrentUser),
+            updateUserData(updatedTargetUser)
+        ]);
+
+        return true;
+    } catch (error) {
+        console.error('Error sending friend request:', error);
+        throw error;
+    }
+}
+
+// Enumerates possible friendship statuses
+export type FriendshipStatus = "friend" | "pending_outgoing" | "pending_incoming" | "none";
+
+// Check the friendship status of a given user ID relative to the current user
+export async function checkFriendshipStatus(userId: string): Promise<FriendshipStatus> {
+    try {
+        const currentUser = await fetchGalleryData();
+
+        // Check if they're friends
+        const isFriend = (currentUser.friends ?? []).some(
+            (friendId: string | { $oid: string }) => (typeof friendId === 'string' ? friendId : friendId.$oid) === userId
+        );
+        if (isFriend) return "friend";
+
+        // Check for outgoing friend request
+        const isOutgoingRequest = (currentUser.pending_friends ?? []).some(
+            request => request.receiving === userId
+        );
+        if (isOutgoingRequest) return "pending_outgoing";
+
+        // Check for incoming friend request
+        const isIncomingRequest = (currentUser.pending_friends ?? []).some(
+            request => request.sending === userId
+        );
+        if (isIncomingRequest) return "pending_incoming";
+
+        return "none";
+
+    } catch (error) {
+        console.error('Error checking friendship status:', error);
+        throw error;
     }
 }
 
@@ -211,102 +444,4 @@ export async function getUserGallery(user_id: string): Promise<GalleryResponse> 
         throw new Error("Failed to fetch gallery data");
     }
     return response.json();
-}
-
-//Handled when trade recipient declines trade request. This will remove the trade request from both users.
-export const handleDeclineTrade = async (trade_id: string): Promise<boolean> => {
-    console.log("Declining trade request:", trade_id);
-    
-    try {
-        // In a real implementation, this would make an API call to decline the trade
-        // For mock purposes, we'll simulate a successful decline
-        
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Remove the trade request from our mock data
-        if (mockTradeRequestData[trade_id]) {
-            delete mockTradeRequestData[trade_id];
-        }
-        
-        console.log("Trade declined successfully");
-        return true;
-    } catch (error) {
-        console.error("Error declining trade:", error);
-        return false;
-    }
-}
-
-// Simulates sending a friend request to a user by username
-export async function sendFriendRequest(username: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Simulate a successful request in 75% of cases
-      const success = Math.random() < 0.75;
-      
-      // In real implementation, we would make an API call to send a friend request
-      console.log(`Sending friend request to ${username}`);
-      
-      if (success) {
-        // Mock adding to our pending requests data
-        // In a real app, this would be handled by the server
-        
-        // In this mock, let's assume a random mock user is created with the given username
-        const mockUserId = `user-${Math.random().toString(36).substring(2, 9)}`;
-        
-        mockFriendRequestData[mockUserId] = {
-          "_id": mockUserId,
-          "sender_id": "12345", // Assume current user is sending
-          "recipient_id": mockUserId,
-          "username": username,
-          "profile_image": "https://source.unsplash.com/random/300x300/?person"
-        };
-      }
-      
-      resolve(success);
-    }, 1500); // Simulate network delay
-  });
-}
-
-// Add these new functions to check friendship status
-
-// Enumerates possible friendship statuses
-export type FriendshipStatus = "friend" | "pending_outgoing" | "pending_incoming" | "none";
-
-// Check the friendship status of a given user ID relative to the current user
-export async function checkFriendshipStatus(userId: string): Promise<FriendshipStatus> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Check if the user is already a friend
-      const isFriend = Object.values(mockFriendData).some(friend => friend._id === userId);
-      
-      if (isFriend) {
-        resolve("friend");
-        return;
-      }
-      
-      // Check if there's a pending friend request sent by the current user
-      const isOutgoingRequest = Object.values(mockFriendRequestData).some(
-        request => request.sender_id === "12345" && request.recipient_id === userId
-      );
-      
-      if (isOutgoingRequest) {
-        resolve("pending_outgoing");
-        return;
-      }
-      
-      // Check if there's a pending friend request sent to the current user
-      const isIncomingRequest = Object.values(mockFriendRequestData).some(
-        request => request.sender_id === userId && request.recipient_id === "12345"
-      );
-      
-      if (isIncomingRequest) {
-        resolve("pending_incoming");
-        return;
-      }
-      
-      // No friendship relation exists
-      resolve("none");
-    }, 500); // Simulate network delay
-  });
 }
