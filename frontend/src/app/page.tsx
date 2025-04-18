@@ -695,6 +695,7 @@ export default function Home() {
       // Create a new card from the identified plant
       // Ensure it matches the backend schema exactly
       const newCard: CardType = {
+        id: identifiedPlant.id + "-" + userState.userId,
         creator: userState.userId,
         owner: userState.userId,
         commonName: identifiedPlant.commonName,
