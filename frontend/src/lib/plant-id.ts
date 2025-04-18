@@ -130,7 +130,7 @@ export async function identifyPlant(
   longitude?: number
 ): Promise<PlantIdResponse> {
   try {
-    const API_KEY = 'tDyWZUSoXv7ERi278q92249NFFJna4DqKbrocnImlM68iKV1c0';
+    const API_KEY = 'AUtALUuF1h6jUxo1cM3dBt0aF0Q3dAWXEWPdCb4nPIWwr3aDbu';
     
     // Build the URL with query parameters for details
     const baseUrl = 'https://plant.id/api/v3/identification';
