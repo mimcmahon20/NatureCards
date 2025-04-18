@@ -2,6 +2,7 @@
 
 import { Card } from "@/components/ui/card";
 import {
+  Camera,
   Upload,
   Users,
   Search,
@@ -20,7 +21,6 @@ import Image from "next/image";
 import { UploadButton } from "@/lib/utils";
 import { userState, updateUserData, fetchUserGalleryData } from "@/lib/gallery";
 import { Card as CardType } from "@/types/index";
-import { CameraCapture } from "@/components/CameraCapture";
 
 // Define Friend type for UI
 type Friend = {
@@ -779,14 +779,27 @@ export default function Home() {
     }
   };
 
-  const handleCameraCapture = async (file: File) => {
-    try {
-      setIsIdentifying(true);
-      await handleDirectImageUpload(file);
-    } catch (err) {
-      logError("Error handling camera capture", err);
-      setErrorMessage("Failed to process image. Please try again.");
-      setIsIdentifying(false);
+  // Modified function to handle image capture
+  const handleImageCapture = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+
+    if (file) {
+      try {
+        if (useLocalStorage) {
+          // Use direct upload method
+          await handleDirectImageUpload(file);
+        } else {
+          // Use the original method
+          const imageUrl = URL.createObjectURL(file);
+          await handleImageFromUrl(imageUrl);
+        }
+      } catch (err) {
+        logError("Error handling captured image", err);
+        setErrorMessage("Failed to process image. Please try again.");
+        setIsIdentifying(false);
+      }
     }
   };
 
@@ -1139,22 +1152,36 @@ export default function Home() {
             endpoint="plantImageUploader"
             onClientUploadComplete={(res) => {
               if (res && res.length > 0) {
+                // Get the URL of the uploaded file
                 const uploadedFileUrl = res[0].url;
+
                 if (uploadedFileUrl) {
+                  // Process the uploaded image with our identification logic
                   handleImageFromUrl(uploadedFileUrl);
                 } else {
-                  setErrorMessage("Upload completed but no file URL was returned.");
+                  setErrorMessage(
+                    "Upload completed but no file URL was returned."
+                  );
                 }
               }
             }}
             onUploadError={(error: Error) => {
               console.error("Upload error details:", error);
-              setErrorMessage(`Upload failed: ${error.message || "Unknown error"}`);
-              alert(`Upload error: ${error.message || "Unknown error"}\n\nCheck browser console for more details.`);
+              // Display more detailed error information
+              setErrorMessage(
+                `Upload failed: ${error.message || "Unknown error"}`
+              );
+              // Show alert with the error to make debugging easier
+              alert(
+                `Upload error: ${
+                  error.message || "Unknown error"
+                }\n\nCheck browser console for more details.`
+              );
             }}
             appearance={{
               container: "w-full h-full",
-              button: "w-full h-full p-0 m-0 bg-transparent hover:bg-transparent border-none shadow-none focus:ring-0 focus:ring-offset-0",
+              button:
+                "w-full h-full p-0 m-0 bg-transparent hover:bg-transparent border-none shadow-none focus:ring-0 focus:ring-offset-0",
             }}
             content={{
               button({ ready }) {
@@ -1164,7 +1191,7 @@ export default function Home() {
                       <Card className="w-full h-full flex flex-col items-center justify-center gap-2 sm:gap-4 hover:bg-slate-100 transition-colors p-4">
                         <Upload className="w-8 h-8 sm:w-12 sm:h-12" />
                         <h2 className="text-sm sm:text-xl font-semibold text-center">
-                          Upload Picture
+                          Identify Plant
                         </h2>
                       </Card>
                     </div>
@@ -1184,11 +1211,6 @@ export default function Home() {
             }}
           />
         </div>
-
-        <CameraCapture 
-          onCapture={handleCameraCapture}
-          isProcessing={isIdentifying}
-        />
       </div>
 
       {/* Plant Identification Drawer */}
